@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/build",
+  "command": "/opt/homebrew/bin/aarch64-apple-darwin22-g++-13  -I/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/glad/include -I/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/glfw/include -I/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/glm/include -I/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/stb_image/include -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/System/Library/Frameworks -g -std=gnu++20 -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk -o CMakeFiles/tiny-engine.dir/src/main.cpp.o -c /Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/main.cpp",
+  "file": "/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/main.cpp",
+  "output": "CMakeFiles/tiny-engine.dir/src/main.cpp.o"
+},
+{
+  "directory": "/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/build",
+  "command": "/opt/homebrew/bin/aarch64-apple-darwin22-gcc-13  -I/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/glad/include -I/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/glfw/include -I/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/glm/include -I/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/stb_image/include -F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk/System/Library/Frameworks -g -arch arm64 -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk -o CMakeFiles/tiny-engine.dir/third_party/glad/src/glad.c.o -c /Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/glad/src/glad.c",
+  "file": "/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/third_party/glad/src/glad.c",
+  "output": "CMakeFiles/tiny-engine.dir/third_party/glad/src/glad.c.o"
+}
+]
