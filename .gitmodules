@@ -13,3 +13,6 @@ url=git@github.com:shuaigougou5545/IMGUI.git
 [submodule "third_party/stb_image"]
 	path = third_party/stb_image
 url=git@github.com:shuaigougou5545/stb_image.git
+[submodule "third_party/tinyobjloader"]
+	path = third_party/tinyobjloader
+	url = git@github.com:shuaigougou5545/tinyobjloader.git
