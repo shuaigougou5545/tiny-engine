@@ -22,6 +22,8 @@ set(SOURCE_FILES
     src/model_object.cpp
     src/shader.h
     src/debug.h
+    src/shader_library.h
+    src/shader_library.cpp
     ${THIRD_PARTY_DIR}/glad/src/glad.c # glad
     ${IMGUI_FILES} # imgui
 )
