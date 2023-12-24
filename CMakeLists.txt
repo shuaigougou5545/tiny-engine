@@ -18,6 +18,10 @@ file(GLOB IMGUI_FILES "third_party/imgui/*.cpp") # clang
 # add source files => .cpp
 set(SOURCE_FILES 
     src/main.cpp
+    src/model_object.h
+    src/model_object.cpp
+    src/shader.h
+    src/debug.h
     ${THIRD_PARTY_DIR}/glad/src/glad.c # glad
     ${IMGUI_FILES} # imgui
 )
