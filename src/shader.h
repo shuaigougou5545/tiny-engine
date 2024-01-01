@@ -3,10 +3,13 @@
 
 #include <glad/glad.h>
 
+#include <vector>
 #include <string>
+#include <unordered_map>
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -136,4 +139,25 @@ private:
         }
     }
 };
+
+class ShaderLibrary {
+public:
+    void add(const std::string& name, Shader& shader) {
+        shader_dict.emplace(name, std::make_shared<Shader>(shader));
+        shader_names.push_back(name);
+    }
+
+    std::shared_ptr<Shader> get(const std::string& name) {
+        auto it = shader_dict.find(name);
+        if (it != shader_dict.end()) {
+            return it->second;
+        } else {
+            throw std::runtime_error("Shader not found: " + name);
+        }
+    }
+    
+    std::unordered_map<std::string, std::shared_ptr<Shader>> shader_dict;
+    std::vector<std::string> shader_names;
+};
+
 #endif
