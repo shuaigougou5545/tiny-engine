@@ -52,10 +52,10 @@ int main()
     // resource
 
     ModelLibrary model_library;
-    ModelOBJ eunuch("../resources/obj/eunuch.obj");
+    model_library.loadModels();
     ModelBox box;
-    model_library.add("eunuch", eunuch);
     model_library.add("box", box);
+
 
     ModelBox skybox;
 
@@ -65,7 +65,7 @@ int main()
 
     // init
 
-    ModelManager model_manager(eunuch);
+    ModelManager model_manager;
     ModelManager skybox_manager(skybox);
 
     // shader
@@ -131,15 +131,15 @@ int main()
 
         // skybox render
 
-        // skybox_shader.use();
-        // skybox_shader.setMat4("view", glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f)));
-        // skybox_shader.setMat4("projection", projection_matrix);
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
-        // glDepthFunc(GL_LEQUAL);
-        // glBindVertexArray(skybox_VAO);
-        // glDrawElements(GL_TRIANGLES, skybox.indices.size(), GL_UNSIGNED_INT, 0);
-        // glDepthFunc(GL_LESS);
+        skybox_shader.use();
+        skybox_shader.setMat4("view", glm::mat4(glm::mat3(view_matrix)));
+        skybox_shader.setMat4("projection", projection_matrix);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
+        glDepthFunc(GL_LEQUAL);
+        glBindVertexArray(skybox_manager.VAO);
+        glDrawElements(GL_TRIANGLES, skybox_manager.model->indices.size(), GL_UNSIGNED_INT, 0);
+        glDepthFunc(GL_LESS);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -13,7 +13,7 @@ public:
     ImguiManager(GLFWwindow* w);
     ~ImguiManager();
 
-    // 封装一些常用组件
+    // 封装一些常用imgui组件
     void createCombo(const std::string& name, const std::vector<std::string>& items, int& selectedItem);
 
     GLFWwindow* window;

@@ -78,6 +78,8 @@ public:
             throw std::runtime_error("Model not found: " + name);
         }
     }
+
+    void loadModels(const std::string& file_path = "../resources/obj/");
     
     std::unordered_map<std::string, std::shared_ptr<Model>> model_dict;
     std::vector<std::string> model_names;
@@ -85,13 +87,14 @@ public:
 
 class ModelManager {
 public:
-    ModelManager(Model& m) { model = std::make_shared<Model>(m); init(); }
+    ModelManager() {}
+    ModelManager(const Model& m) { model = std::make_shared<Model>(m); init(); }
     ~ModelManager();
     void init();
     void draw();
 
-    void reloadModel(Model& m);
+    void reloadModel(const Model& m);
 
     unsigned int VBO, EBO, VAO;
-    std::shared_ptr<Model> model;
+    std::shared_ptr<Model> model = nullptr;
 };

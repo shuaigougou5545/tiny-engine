@@ -5,7 +5,8 @@
 #include <limits>
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
-
+#include <filesystem>
+namespace fs = std::filesystem;
 
 void Model::normalize()
 {
@@ -19,7 +20,7 @@ void Model::normalize()
         vertex.pos.z = (vertex.pos.z - aabb.center.z) * scale;
     }
 
-    std::cout << "[Model]: normalize model " << model_name << " successfully!" << std::endl;
+    // std::cout << "[Model]: normalize model " << model_name << " successfully!" << std::endl;
 }
 
 
@@ -87,12 +88,12 @@ void ModelOBJ::load(std::string file_name)
     aabb.extend = (aabb.max - aabb.min) / 2.0f;
 
     std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
-    std::cout << "[Model]: vertices count: " << vertices.size() << std::endl;
-    std::cout << "[Model]: indices count: " << indices.size() << std::endl;
-    std::cout << "[Model]: aabb center: " << aabb.center.x << ", " << aabb.center.y <<
-        ", " << aabb.center.z << std::endl;
-    std::cout << "[Model]: aabb extend: " << aabb.extend.x << ", " << aabb.extend.y <<
-        ", " << aabb.extend.z << std::endl;
+    // std::cout << "[Model]: vertices count: " << vertices.size() << std::endl;
+    // std::cout << "[Model]: indices count: " << indices.size() << std::endl;
+    // std::cout << "[Model]: aabb center: " << aabb.center.x << ", " << aabb.center.y <<
+    //     ", " << aabb.center.z << std::endl;
+    // std::cout << "[Model]: aabb extend: " << aabb.extend.x << ", " << aabb.extend.y <<
+    //     ", " << aabb.extend.z << std::endl;
 
     normalize();
 }
@@ -196,14 +197,38 @@ void ModelBox::load(float width, float height, float depth)
     aabb.extend = (aabb.max - aabb.min) / 2.0f;
 
     std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
-    std::cout << "[Model]: vertices count: " << vertices.size() << std::endl;
-    std::cout << "[Model]: indices count: " << indices.size() << std::endl;
-    std::cout << "[Model]: aabb center: " << aabb.center.x << ", " << aabb.center.y <<
-        ", " << aabb.center.z << std::endl;
-    std::cout << "[Model]: aabb extend: " << aabb.extend.x << ", " << aabb.extend.y <<
-        ", " << aabb.extend.z << std::endl;
+    // std::cout << "[Model]: vertices count: " << vertices.size() << std::endl;
+    // std::cout << "[Model]: indices count: " << indices.size() << std::endl;
+    // std::cout << "[Model]: aabb center: " << aabb.center.x << ", " << aabb.center.y <<
+    //     ", " << aabb.center.z << std::endl;
+    // std::cout << "[Model]: aabb extend: " << aabb.extend.x << ", " << aabb.extend.y <<
+    //     ", " << aabb.extend.z << std::endl;
 
     // normalize();
+}
+
+void ModelLibrary::loadModels(const std::string& file_path)
+{
+    // collect obj files from "../resources/obj/"
+    std::string path = file_path;  
+
+    try {
+        if (fs::exists(path) && fs::is_directory(path)) {
+            for (const auto& entry : fs::directory_iterator(path)) {
+                if (entry.path().extension() == ".obj") {
+                    // .path(): 完整路径; 
+                    // .path().filename(): 纯文件+后缀; 
+                    // .path().stem(): 纯文件+无后缀;
+                    std::string name = entry.path().stem().string();
+                    std::string filename = entry.path().string();
+                    model_dict.emplace(name, std::make_shared<ModelOBJ>(filename));
+                    model_names.push_back(name);
+                }
+            }
+        }
+    } catch (fs::filesystem_error& e) {
+        std::cerr << e.what() << std::endl;
+    }
 }
 
 ModelManager::~ModelManager()
@@ -215,6 +240,11 @@ ModelManager::~ModelManager()
 
 void ModelManager::init()
 {
+    if(!model)
+    {
+        std::cout << "[ModelManager]: model is empty!" << std::endl;
+        return;
+    }
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
     glGenVertexArrays(1, &VAO);
@@ -240,9 +270,9 @@ void ModelManager::draw()
     glDrawElements(GL_TRIANGLES, model->indices.size(), GL_UNSIGNED_INT, 0);
 }
 
-void ModelManager::reloadModel(Model& m)
+void ModelManager::reloadModel(const Model& m)
 {
-    if(m.model_name == model->model_name)
+    if(model && m.model_name == model->model_name)
         return;
     
     glDeleteBuffers(1, &VBO);
@@ -253,5 +283,5 @@ void ModelManager::reloadModel(Model& m)
 
     init(); 
 
-    std::cout << "[Model]: reload model " << model->model_name << " successfully!" << std::endl;
+    // std::cout << "[Model]: reload model " << model->model_name << " successfully!" << std::endl;
 }
