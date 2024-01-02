@@ -3,26 +3,31 @@
 
 #include <glad/glad.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <filesystem>
+namespace fs = std::filesystem;
 
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 class Shader
 {
 public:
     unsigned int ID;
+    std::string shader_name;
     // constructor generates the shader on the fly
     // ------------------------------------------------------------------------
     Shader(const char* vertexPath, const char* fragmentPath)
     {
+        fs::path fs_path(vertexPath);
+        shader_name = fs_path.stem().string();
         // 1. retrieve the vertex/fragment source code from filePath
         std::string vertexCode;
         std::string fragmentCode;
@@ -87,7 +92,7 @@ public:
     {
         GLint location = glGetUniformLocation(ID, name.c_str());
         if(location == -1)
-            std::cout << "[ERROR]: Uniform " << name << " not found in shader" << std::endl;
+            std::cout << "[ERROR]: Uniform " << name << " not found in shader " << shader_name << std::endl;
         return location;
     }
     // utility uniform functions
@@ -153,6 +158,50 @@ public:
             return it->second;
         } else {
             throw std::runtime_error("Shader not found: " + name);
+        }
+    }
+
+    void loadShaders(const std::string& file_path = "../resources/shaders/universal shaders")
+    {
+        // collect obj files from "../resources/shaders/universal shaders"
+        std::string path = file_path;  
+
+        try {
+            if (fs::exists(path) && fs::is_directory(path)) {
+                for (const auto& entry : fs::directory_iterator(path)) {
+                    if (entry.is_directory()) {
+                        std::string name = entry.path().stem().string();
+                        std::string filename = entry.path().string();
+
+                        std::string vsFilename;
+                        std::string fsFilename;
+
+                        std::string sub_path = entry.path().string();
+                        for (const auto& sub_entry : fs::directory_iterator(sub_path)) {
+                            if(sub_entry.is_directory()) 
+                                continue;
+
+                            std::string extension = sub_entry.path().extension().string();
+                            if (extension == ".vert") {
+                                vsFilename = sub_entry.path().string();
+                            }
+                            else if (extension == ".frag") {
+                                fsFilename = sub_entry.path().string();
+                            }
+                        }
+
+                        if (vsFilename.empty() || fsFilename.empty()) {
+                            std::cout << "[ShaderLibrary]: " << "Skipping directory " << name << " because it does not contain both a vertex and fragment shader." << std::endl;
+                            continue;
+                        }
+
+                        shader_dict.emplace(name, std::make_shared<Shader>(vsFilename.c_str(), fsFilename.c_str()));
+                        shader_names.push_back(name);
+                    }
+                }
+            }
+        } catch (fs::filesystem_error& e) {
+            std::cerr << e.what() << std::endl;
         }
     }
     

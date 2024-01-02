@@ -8,13 +8,29 @@
 #include "debug.h"
 #include "model.h"
 #include "shader.h"
+#include "camera.h"
 #include "texture_loader.h"
 #include "imgui_manager.h"
 
 const int screen_width = 800;
 const int screen_height = 600;
 
+// camera
+Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
+float lastX = screen_width / 2.0f;
+float lastY = screen_height / 2.0f;
+bool firstMouse = true;
+bool leftMouseButtonPressed = false;
+bool mouseOnImguiWindow = false;
+
+// timing
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f;
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 
 int main()
@@ -44,6 +60,9 @@ int main()
     }
 
     glfwSetWindowSizeCallback(window, framebuffer_size_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetScrollCallback(window, scroll_callback);
 
     // imgui
 
@@ -70,17 +89,13 @@ int main()
 
     // shader
 
+    Shader skybox_shader("../resources/shaders/skybox/skybox.vert", "../resources/shaders/skybox/skybox.frag");
+
     ShaderLibrary shader_library;
-    Shader normal_shader("../resources/shaders/normal.vert", "../resources/shaders/normal.frag");
-    Shader texture_shader("../resources/shaders/texture.vert", "../resources/shaders/texture.frag");
-    shader_library.add("normal", normal_shader);
-    shader_library.add("texture", texture_shader);
-
-    Shader skybox_shader("../resources/shaders/skybox.vert", "../resources/shaders/skybox.frag");
-
-    texture_shader.use();
-    texture_shader.setInt("texture_diffuse", 0);
-    glActiveTexture(GL_TEXTURE0);
+    shader_library.loadShaders();
+    std::shared_ptr<Shader> texture_shader = shader_library.get("texture");
+    texture_shader->use();
+    texture_shader->setInt("texture_diffuse", 0);
     glBindTexture(GL_TEXTURE_2D, texture);
 
     // opengl status
@@ -89,6 +104,10 @@ int main()
 
     while(!glfwWindowShouldClose(window))
     {
+        float currentFrame = static_cast<float>(glfwGetTime());
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        
         processInput(window);
         glfwPollEvents();
 
@@ -114,16 +133,22 @@ int main()
 
         ImGui::End();
 
+        // special case
+
+        if(curr_shader->shader_name == "reflect")
+        {
+            // curr_shader->use();
+            // curr_shader->setInt("skybox", 0);
+            // glActiveTexture(GL_TEXTURE0);
+            // glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
+        }
+
         // render
 
         curr_shader->use();
         glm::mat4 model_matrix = glm::mat4(1.0f);
-        float theta = glm::radians(90.0f); // 俯仰角
-        float phi = glm::radians(glfwGetTime() * 10.0); // 方位角
-        float radius = 5.0f; // 半径
-        glm::vec3 eye = glm::vec3(sin(theta) * cos(phi), cos(theta), sin(theta) * sin(phi)) * radius;
-        glm::mat4 view_matrix = glm::lookAt(eye, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 projection_matrix = glm::perspective(glm::radians(45.0f), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
+        glm::mat4 view_matrix = camera.GetViewMatrix();
+        glm::mat4 projection_matrix = glm::perspective(glm::radians(camera.Zoom), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
         curr_shader->setMat4("model", model_matrix);
         curr_shader->setMat4("view", view_matrix);
         curr_shader->setMat4("projection", projection_matrix);
@@ -160,8 +185,66 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window)
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+    if(button == GLFW_MOUSE_BUTTON_LEFT)
+    {
+        if(action == GLFW_PRESS)
+        {
+            leftMouseButtonPressed = true;
+        }
+        else if(action == GLFW_RELEASE)
+        {
+            leftMouseButtonPressed = false;
+        }
+    }
+    
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.WantCaptureMouse)
+        mouseOnImguiWindow = true;
+    else
+        mouseOnImguiWindow = false;
+}
+
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+    float xpos = static_cast<float>(xposIn);
+    float ypos = static_cast<float>(yposIn);
+
+    if (firstMouse)
+    {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
+
+    float xoffset = xpos - lastX;
+    float yoffset = lastY - ypos;
+
+    lastX = xpos;
+    lastY = ypos;
+    
+    if(leftMouseButtonPressed && !mouseOnImguiWindow){
+        camera.ProcessMouseMovement(xoffset, yoffset);
+    }
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+    camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+void processInput(GLFWwindow *window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.ProcessKeyboard(FORWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.ProcessKeyboard(BACKWARD, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.ProcessKeyboard(LEFT, deltaTime);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.ProcessKeyboard(RIGHT, deltaTime);
 }

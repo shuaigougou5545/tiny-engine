@@ -20,6 +20,7 @@ set(SOURCE_FILES
     src/main.cpp
     src/model.h
     src/model.cpp
+    src/camera.h
     src/shader.h
     src/debug.h
     src/texture_loader.h
