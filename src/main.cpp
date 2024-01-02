@@ -107,7 +107,7 @@ int main()
         float currentFrame = static_cast<float>(glfwGetTime());
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        
+
         processInput(window);
         glfwPollEvents();
 
@@ -137,10 +137,11 @@ int main()
 
         if(curr_shader->shader_name == "reflect")
         {
-            // curr_shader->use();
-            // curr_shader->setInt("skybox", 0);
-            // glActiveTexture(GL_TEXTURE0);
-            // glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
+            curr_shader->use();
+            curr_shader->setVec3("cameraPos", camera.Position);
+            curr_shader->setInt("skybox", 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texture);
         }
 
         // render

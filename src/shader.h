@@ -92,7 +92,9 @@ public:
     {
         GLint location = glGetUniformLocation(ID, name.c_str());
         if(location == -1)
-            std::cout << "[ERROR]: Uniform " << name << " not found in shader " << shader_name << std::endl;
+        {
+            // std::cout << "[ERROR]: Uniform " << name << " not found in shader " << shader_name << std::endl;
+        }  
         return location;
     }
     // utility uniform functions
@@ -110,6 +112,11 @@ public:
     void setFloat(const std::string &name, float value) const
     { 
         glUniform1f(getLocation(name), value); 
+    }
+    // ------------------------------------------------------------------------
+    void setVec3(const std::string &name, glm::vec3 value) const
+    {
+        glUniform3f(getLocation(name), value.x, value.y, value.z);
     }
     // ------------------------------------------------------------------------
     void setMat4(const std::string &name, glm::mat4 value) const
