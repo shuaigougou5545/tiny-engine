@@ -216,4 +216,4 @@ public:
     std::vector<std::string> shader_names;
 };
 
-#endif
+#endif // SHADER_H

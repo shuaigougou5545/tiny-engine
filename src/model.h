@@ -1,3 +1,6 @@
+#ifndef MODEL_H
+#define MODEL_H
+
 #include <vector>
 #include <string>
 #include <memory>
@@ -98,3 +101,5 @@ public:
     unsigned int VBO, EBO, VAO;
     std::shared_ptr<Model> model = nullptr;
 };
+
+#endif // MODEL_H

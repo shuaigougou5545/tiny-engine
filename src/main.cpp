@@ -9,7 +9,7 @@
 #include "model.h"
 #include "shader.h"
 #include "camera.h"
-#include "texture_loader.h"
+#include "utils.h"
 #include "imgui_manager.h"
 
 const int screen_width = 800;
@@ -79,8 +79,8 @@ int main()
     ModelBox skybox;
 
     int width, height, channels;
-    unsigned int texture = loadTexture("../resources/texture/container.jpg", width, height, channels);
-    unsigned int skybox_texture = loadCubeMap("../resources/texture/skybox", width, height, channels);
+    unsigned int texture = Utils::loadTexture("../resources/texture/container.jpg", width, height, channels);
+    unsigned int skybox_texture = Utils::loadCubeMap("../resources/texture/skybox", width, height, channels);
 
     // init
 

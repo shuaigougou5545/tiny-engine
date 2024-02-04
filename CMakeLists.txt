@@ -14,20 +14,14 @@ endif()
 set (THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party)
 
 file(GLOB IMGUI_FILES "third_party/imgui/*.cpp") # clang
+file(GLOB SOURCES "src/*.h" "src/*.cpp")
 
 # add source files => .cpp
 set(SOURCE_FILES 
-    src/main.cpp
-    src/model.h
-    src/model.cpp
-    src/camera.h
-    src/shader.h
-    src/debug.h
-    src/texture_loader.h
-    src/imgui_manager.h
-    src/imgui_manager.cpp
+    ${SOURCES}
     ${THIRD_PARTY_DIR}/glad/src/glad.c # glad
     ${IMGUI_FILES} # imgui
+    ${THIRD_PARTY_DIR}/stb_image/src/stb_image_impl.cpp # stb_image
 )
 
 # 添加外部库的头文件

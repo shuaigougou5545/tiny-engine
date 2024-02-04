@@ -1,3 +1,6 @@
+#ifndef IMGUI_MANAGER_H
+#define IMGUI_MANAGER_H
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
@@ -18,3 +21,5 @@ public:
 
     GLFWwindow* window;
 };
+
+#endif // IMGUI_MANAGER_H
