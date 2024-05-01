@@ -216,6 +216,43 @@ void ModelBox::load(float width, float height, float depth)
     // normalize();
 }
 
+void ModelQuad::load()
+{
+    // model_name = "quad";
+
+    vertices.clear();
+    indices.clear();
+
+    /*
+        1---2
+        |   |
+        0---3
+    */
+
+   	Vertex v[4];
+
+    v[0] = Vertex(-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f);
+	v[1] = Vertex(-1.0f, +1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f);  
+    v[2] = Vertex(+1.0f, +1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);  
+    v[3] = Vertex(+1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f);  
+
+    vertices.assign(&v[0], &v[4]);
+ 
+	uint32_t i[6];
+
+	i[0] = 0; i[1] = 1; i[2] = 2;
+	i[3] = 0; i[4] = 2; i[5] = 3;
+
+	indices.assign(&i[0], &i[6]);
+
+    aabb.min = glm::vec3(-1.0f, -1.0f, 0.0f);
+    aabb.max = glm::vec3(+1.0f, +1.0f, 0.0f);
+    aabb.center = (aabb.max + aabb.min) / 2.0f;
+    aabb.extend = (aabb.max - aabb.min) / 2.0f;
+
+    std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
+}
+
 void ModelLibrary::loadModels(const std::string& file_path)
 {
     // collect obj files from "../resources/obj/"

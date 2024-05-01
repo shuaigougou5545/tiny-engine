@@ -21,7 +21,6 @@ void main()
     vec3 V = normalize(u_CameraPos - v_PosW);
     vec3 H = normalize(L + V);
 
-
     // ambient
     vec3 ambient_light = vec3(1.0);
     vec3 ambient = ambient_light * 0.01;

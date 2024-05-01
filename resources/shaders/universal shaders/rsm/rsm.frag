@@ -2,6 +2,7 @@
 
 in vec3 v_NormalW;
 in vec3 v_PosW;
+in vec4 v_PosH;
 
 out vec4 FragColor;
 
@@ -11,8 +12,13 @@ uniform vec3 u_LightStrength;
 uniform vec3 u_Albedo;
 uniform mat4 u_LightViewMatrix;
 uniform mat4 u_LightProjectionMatrix;
+uniform float u_LightNear;
+uniform float u_LightFar;
 
 uniform sampler2D u_Texture0; // shadow map
+uniform sampler2D u_ReflectorNormalW;
+uniform sampler2D u_ReflectorPosW;
+uniform sampler2D u_ReflectorFlux;
 
 float my_pow_5(float c)
 {
@@ -28,16 +34,14 @@ vec3 getLightSpacePos(vec3 posW)
 
 void main()
 {
+    // camera
+    vec4 ndc = v_PosH / v_PosH.w; // [-1,1]
+    vec2 fragCoord = ndc.xy * 0.5 + 0.5; // [0,1]
+
     vec3 normalW = normalize(v_NormalW);
     vec3 L = normalize(u_LightPos - v_PosW);
     vec3 V = normalize(u_CameraPos - v_PosW);
-    vec3 R = reflect(-L, normalW);
-
-    vec3 ndc = getLightSpacePos(v_PosW); 
-    ndc = ndc * 0.5 + 0.5; // [0,1]
-    float depth = texture(u_Texture0, ndc.xy).r; // blocker
-    float bias = 0.005;
-    float visibility = (ndc.z - bias < depth) ? 1.0 : 0.0;
+    vec3 H = normalize(L + V);
 
     // ambient
     vec3 ambient_light = vec3(1.0);
@@ -48,13 +52,13 @@ void main()
     vec3 diffuse = u_LightStrength * u_Albedo * diff;
 
     // specular
-    float spec = my_pow_5(max(dot(normalW, R), 0.0));
+    float spec = my_pow_5(max(dot(normalW, H), 0.0));
     vec3 specular = u_LightStrength * u_Albedo * spec;
 
     vec3 color = ambient + diffuse + specular;
-    color *= visibility;
 
-    // color = vec3(visibility); // for test
-
-    FragColor = vec4(color, 1.0);
+    FragColor = vec4(vec3(texture(u_Texture0, fragCoord).r), 1.0);
+    FragColor = texture(u_ReflectorNormalW, fragCoord);
+    FragColor = texture(u_ReflectorPosW, fragCoord);
+    FragColor = texture(u_ReflectorFlux, fragCoord);
 }

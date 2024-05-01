@@ -70,6 +70,14 @@ public:
     void load(float width, float height, float depth);
 };
 
+class ModelQuad : public Model {
+public:
+    ModelQuad() { load(); model_name = "quad"; }
+    ModelQuad(const std::string& name) { load(); model_name = name; }
+
+    void load();
+};
+
 class ModelLibrary {
 public:
     void add(const std::string& name, Model& model) {

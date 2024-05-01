@@ -122,6 +122,9 @@ int main()
     light_box.scale = glm::vec3(0.1);
     std::shared_ptr<ModelManager> light_manager = std::make_shared<ModelManager>(light_box);
 
+    ModelQuad quad("quad");
+    std::shared_ptr<ModelManager> quad_manager = std::make_shared<ModelManager>(quad);
+
     //
     // init
 
@@ -131,7 +134,7 @@ int main()
     //
     // shader
 
-    std::shared_ptr<Shader> gbuffer_shader = std::make_shared<Shader>("../resources/shaders/gbuffer/gbuffer.vert", "../resources/shaders/gbuffer/gbuffer.frag");
+    std::shared_ptr<Shader> gbuffer_light_shader = std::make_shared<Shader>("../resources/shaders/gbuffer-light/gbuffer-light.vert", "../resources/shaders/gbuffer-light/gbuffer-light.frag");
     std::shared_ptr<Shader> skybox_shader = std::make_shared<Shader>("../resources/shaders/skybox/skybox.vert", "../resources/shaders/skybox/skybox.frag");
 
 
@@ -143,9 +146,9 @@ int main()
 
     //
     // G-Buffer
-    // gbuffer: depth normalW posW flux
+    // gbuffer_light: depth normalW posW flux
     std::vector<std::string> color_attachments = {"NormalW", "PosW", "Flux"};
-    Fbo gbuffer_fbo {screen_width * 2, screen_height * 2, color_attachments};
+    Fbo gbuffer_light_fbo {screen_width * 2, screen_height * 2, color_attachments};
 
     //
     // opengl status
@@ -156,7 +159,7 @@ int main()
     //
     // render list
     std::vector<std::shared_ptr<Shader>> shader_list(2);
-    shader_list[0] = gbuffer_shader;
+    shader_list[0] = gbuffer_light_shader;
 
     //
     // render objects
@@ -179,11 +182,12 @@ int main()
         processInput(window);
         glfwPollEvents();
 
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        gbuffer_fbo.use();
+        gbuffer_light_fbo.use();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        gbuffer_fbo.unuse();
+        gbuffer_light_fbo.unuse();
 
         //
         // imgui
@@ -199,7 +203,7 @@ int main()
         auto curr_model = model_library.get(model_library.model_names[curr_model_index]);
         model_manager->reloadModel(*curr_model);
 
-        static int curr_shader_index = 0;
+        static int curr_shader_index = 9;
         imgui_manager.createCombo("Shader", shader_library.shader_names, curr_shader_index);
         auto curr_shader = shader_library.get(shader_library.shader_names[curr_shader_index]);
 
@@ -297,6 +301,8 @@ int main()
                 curr_shader->setVec3("u_LightStrength", light.Strength);
                 curr_shader->setMat4("u_LightViewMatrix", light.view_matrix);
                 curr_shader->setMat4("u_LightProjectionMatrix", light.projection_matrix);
+                curr_shader->setFloat("u_LightNear", light.near_z);
+                curr_shader->setFloat("u_LightFar", light.far_z);
                 // Texture
                 curr_shader->setInt("u_Texture0", 0);
                 // other
@@ -311,31 +317,48 @@ int main()
             //
             // step 1: G-Buffer
             shader_list[0]->use();
-            gbuffer_fbo.use();
+            gbuffer_light_fbo.use();
             curr_model_manager->draw();
-            gbuffer_fbo.unuse();
+            gbuffer_light_fbo.unuse();
 
             
             //
             // step 2: render normally
 
             // special case
-            if(shader_list[1]->shader_name == "phong-shadow")
-            {
-                glBindTexture(GL_TEXTURE_2D, gbuffer_fbo.depth_texture_id);
-            }
-            
             shader_list[1]->use();
-            curr_model_manager->draw();
+            if(shader_list[1]->shader_name == "phong-shadow") {
+                glBindTexture(GL_TEXTURE_2D, gbuffer_light_fbo.depth_texture_id);
+                curr_model_manager->draw();
+            } else if(shader_list[1]->shader_name == "rsm") {
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, gbuffer_light_fbo.depth_texture_id);
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, gbuffer_light_fbo.color_texture_ids[0]);
+                glActiveTexture(GL_TEXTURE2);
+                glBindTexture(GL_TEXTURE_2D, gbuffer_light_fbo.color_texture_ids[1]);
+                glActiveTexture(GL_TEXTURE3);
+                glBindTexture(GL_TEXTURE_2D, gbuffer_light_fbo.color_texture_ids[2]);
+                shader_list[1]->setInt("u_ReflectorNormalW", 1);
+                shader_list[1]->setInt("u_ReflectorPosW", 2);
+                shader_list[1]->setInt("u_ReflectorFlux", 3);
+                curr_model_manager->draw();
+            } else if(shader_list[1]->shader_name == "quad") {
+                quad_manager->draw();
+            } else {
+                curr_model_manager->draw();
+            } 
+
+
         }
 
         
         if(button) {
-            for(int i = 0; i < gbuffer_fbo.getColorAttachmentsNum(); ++i) {
-                std::string output_filename = "../resources/output/location_" + std::to_string(i) + "_" + gbuffer_fbo.getColorAttachmentsName(i) + "_4.png";
-                Utils::readFrameBufferColorAttachmentToPng(gbuffer_fbo.id, output_filename, screen_width * 2.0, screen_height * 2.0, 4, true, i);
+            for(int i = 0; i < gbuffer_light_fbo.getColorAttachmentsNum(); ++i) {
+                std::string output_filename = "../resources/output/location_" + std::to_string(i) + "_" + gbuffer_light_fbo.getColorAttachmentsName(i) + "_4.png";
+                Utils::readFrameBufferColorAttachmentToPng(gbuffer_light_fbo.id, output_filename, screen_width * 2.0, screen_height * 2.0, 4, true, i);
             }
-            Utils::readFrameBufferDepthAttachmentToPng(gbuffer_fbo.id, "../resources/output/depth_1.png", screen_width * 2.0, screen_height * 2.0);
+            Utils::readFrameBufferDepthAttachmentToPng(gbuffer_light_fbo.id, "../resources/output/depth_1.png", screen_width * 2.0, screen_height * 2.0);
         }
 
         // skybox render
