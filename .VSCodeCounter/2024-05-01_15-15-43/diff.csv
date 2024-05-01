@@ -1,0 +1,26 @@
+"filename", "language", "C++", "Markdown", "GLSL", "comment", "blank", "total"
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/Shader参数说明.md", "Markdown", 0, 3, 0, 0, 0, 3
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/gbuffer/gbuffer.frag", "GLSL", 0, 0, 1, 0, 1, 2
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/gbuffer/gbuffer.vert", "GLSL", 0, 0, 4, 0, 0, 4
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/blinn-phong/blinn-phong.frag", "GLSL", 0, 0, 26, 3, 9, 38
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/blinn-phong/blinn-phong.vert", "GLSL", 0, 0, 14, 0, 4, 18
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/camera-lambert/camera-lambert.frag", "GLSL", 0, 0, 18, 2, 7, 27
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/camera-lambert/camera-lambert.vert", "GLSL", 0, 0, 14, 0, 4, 18
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/cook-torrance/cook-torrance.frag", "GLSL", 0, 0, 69, 9, 23, 101
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/cook-torrance/cook-torrance.vert", "GLSL", 0, 0, 14, 0, 4, 18
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/lambert/lambert.frag", "GLSL", 0, 0, 18, 2, 7, 27
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/lambert/lambert.vert", "GLSL", 0, 0, 14, 0, 4, 18
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/normal/normal.frag", "GLSL", 0, 0, 1, 0, 1, 2
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/normal/normal.vert", "GLSL", 0, 0, 2, 0, 0, 2
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/phong/phong.frag", "GLSL", 0, 0, 29, 14, 13, 56
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/phong/phong.vert", "GLSL", 0, 0, 14, 0, 4, 18
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/shadow-map/shadow-map.frag", "GLSL", 0, 0, 8, 0, 2, 10
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/resources/shaders/universal shaders/shadow-map/shadow-map.vert", "GLSL", 0, 0, 11, 0, 3, 14
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/fbo.h", "C++", 59, 0, 0, 5, 7, 71
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/imgui_manager.cpp", "C++", 29, 0, 0, 0, 5, 34
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/imgui_manager.h", "C++", 8, 0, 0, 0, 0, 8
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/light.h", "C++", 51, 0, 0, 8, 12, 71
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/main.cpp", "C++", 88, 0, 0, 0, 24, 112
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/model.cpp", "C++", 0, 0, 0, 3, 1, 4
+"/Users/goujiayuan/STUDY/图形学算法‼️/tiny-engine/src/model.h", "C++", 21, 0, 0, 1, 7, 29
+"Total", "-", 256, 3, 257, 47, 142, 705

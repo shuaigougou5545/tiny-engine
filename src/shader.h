@@ -93,6 +93,7 @@ public:
         GLint location = glGetUniformLocation(ID, name.c_str());
         if(location == -1)
         {
+            // 静默处理
             // std::cout << "[ERROR]: Uniform " << name << " not found in shader " << shader_name << std::endl;
         }  
         return location;
@@ -101,27 +102,42 @@ public:
     // ------------------------------------------------------------------------
     void setBool(const std::string &name, bool value) const
     {         
-        glUniform1i(getLocation(name), (int)value); 
+        GLint location = getLocation(name);
+        if(location != -1) {
+            glUniform1i(location, (int)value); 
+        } 
     }
     // ------------------------------------------------------------------------
     void setInt(const std::string &name, int value) const
     { 
-        glUniform1i(getLocation(name), value); 
+        GLint location = getLocation(name);
+        if(location != -1) {
+            glUniform1i(location, value); 
+        }
     }
     // ------------------------------------------------------------------------
     void setFloat(const std::string &name, float value) const
     { 
-        glUniform1f(getLocation(name), value); 
+        GLint location = getLocation(name);
+        if(location != -1) {
+            glUniform1f(location, value); 
+        }
     }
     // ------------------------------------------------------------------------
     void setVec3(const std::string &name, glm::vec3 value) const
     {
-        glUniform3f(getLocation(name), value.x, value.y, value.z);
+        GLint location = getLocation(name);
+        if(location != -1) {
+            glUniform3f(location, value.x, value.y, value.z);
+        }
     }
     // ------------------------------------------------------------------------
     void setMat4(const std::string &name, glm::mat4 value) const
     {
-        glUniformMatrix4fv(getLocation(name), 1, GL_FALSE, glm::value_ptr(value));
+        GLint location = getLocation(name);
+        if(location != -1) {
+            glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
+        }
     }
 
 private:
@@ -137,7 +153,7 @@ private:
             if (!success)
             {
                 glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-                std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+                std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << " | " << "shader_name:" << shader_name << "\n -- --------------------------------------------------- -- " << std::endl;
             }
         }
         else
@@ -146,7 +162,7 @@ private:
             if (!success)
             {
                 glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-                std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+                std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << " | " << "shader_name:" << shader_name << "\n -- --------------------------------------------------- -- " << std::endl;
             }
         }
     }

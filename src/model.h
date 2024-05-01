@@ -47,6 +47,9 @@ public:
     std::string model_name;
     AABB aabb;
 
+    glm::vec3 pos = glm::vec3(0.0f);
+    glm::vec3 scale = glm::vec3(1.0f);
+
     void normalize(); // move to center & normalize position
 };
 
@@ -61,7 +64,8 @@ public:
 
 class ModelBox : public Model {
 public:
-    ModelBox() { load(1.0f, 1.0f, 1.0f); }
+    ModelBox() { load(1.0f, 1.0f, 1.0f); model_name = "box"; }
+    ModelBox(const std::string& name) { load(1.0f, 1.0f, 1.0f); model_name = name; }
     
     void load(float width, float height, float depth);
 };
@@ -100,6 +104,31 @@ public:
 
     unsigned int VBO, EBO, VAO;
     std::shared_ptr<Model> model = nullptr;
+
+    // material
+    glm::vec3 albedo = glm::vec3(1.0f);
+    float metallic = 0.7f;
+    float roughness = 0.3f;
 };
+
+class ModelManagerList {
+public:
+    void add(std::shared_ptr<ModelManager> model_manager) {
+        object_list.push_back(model_manager);
+    }
+
+    int count()
+    {
+        return object_list.size();
+    }
+
+    std::shared_ptr<ModelManager> get(int index)
+    {
+        return object_list[index];
+    }
+
+    std::vector<std::shared_ptr<ModelManager>> object_list;
+};
+
 
 #endif // MODEL_H

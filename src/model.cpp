@@ -6,12 +6,14 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
 #include <filesystem>
+#include "debug.h"
 namespace fs = std::filesystem;
 
 void Model::normalize()
 {
-    float max_length = std::max(aabb.extend.x, std::max(aabb.extend.y, aabb.extend.z));
-    float scale = 1.0f / max_length;
+    // float max_length = std::max(aabb.extend.x, std::max(aabb.extend.y, aabb.extend.z));
+    // float scale = 1.0f / max_length;
+    float scale = 1.0f / aabb.extend.y; // y:[-1,1]
 
     for (auto& vertex : vertices)
     {
@@ -107,7 +109,7 @@ void ModelOBJ::load(std::string file_name)
 
 void ModelBox::load(float width, float height, float depth)
 {
-    model_name = "box";
+    // model_name = "box";
 
     vertices.clear();
     indices.clear();
@@ -279,8 +281,10 @@ void ModelManager::draw()
 
 void ModelManager::reloadModel(const Model& m)
 {
-    if(model && m.model_name == model->model_name)
+    if(model && m.model_name == model->model_name) {
         return;
+    }
+        
     
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
