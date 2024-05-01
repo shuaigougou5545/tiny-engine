@@ -181,7 +181,7 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-         gbuffer_fbo.use();
+        gbuffer_fbo.use();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         gbuffer_fbo.unuse();
 
@@ -199,7 +199,7 @@ int main()
         auto curr_model = model_library.get(model_library.model_names[curr_model_index]);
         model_manager->reloadModel(*curr_model);
 
-        static int curr_shader_index = 5;
+        static int curr_shader_index = 0;
         imgui_manager.createCombo("Shader", shader_library.shader_names, curr_shader_index);
         auto curr_shader = shader_library.get(shader_library.shader_names[curr_shader_index]);
 
@@ -211,6 +211,10 @@ int main()
         static glm::vec3 albedo = glm::vec3(1.000, 0.753, 0.796);
         imgui_manager.createSliderFloat3("Albedo", albedo);
         model_manager->albedo = albedo;
+
+        static glm::vec3 pos = model_manager->model->pos;
+        imgui_manager.createSliderFloat3("Pos", pos, -5.0f, 5.0f);
+        model_manager->model->pos = pos;
 
         static float roughness = 0.3f;
         imgui_manager.createSliderFloat("Roughness", roughness);
@@ -230,11 +234,18 @@ int main()
         imgui_manager.createTextFloat3("Camera Position", camera.Position);
 
         // Light
-        imgui_manager.createSliderFloat3("LightPos", light.Position, -5.f, 5.f);
+        imgui_manager.createSliderFloat3("LightPos", light_manager->model->pos, -5.f, 5.f);
+        light.Position = light_manager->model->pos;
+
         glm::vec2 nf = {light.near_z, light.far_z};
         imgui_manager.createSliderFloat2("LightNearFar", nf, 0.1f, 100.0f);
         light.near_z = nf.x;
         light.far_z = nf.y;
+
+        static float fovy = 45.f;
+        imgui_manager.createSliderFloat("LightFovy", fovy, 1.0f, 120.0f);
+        light.fovy = glm::radians(fovy);
+
         light.update();
 
         ImGui::End();
@@ -309,7 +320,7 @@ int main()
             // step 2: render normally
 
             // special case
-            if(shader_list[1]->shader_name == "phong")
+            if(shader_list[1]->shader_name == "phong-shadow")
             {
                 glBindTexture(GL_TEXTURE_2D, gbuffer_fbo.depth_texture_id);
             }

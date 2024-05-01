@@ -10,8 +10,8 @@
 
 
 enum LightProjectFunc {
-    PERSPECTIVE,
-    ORTHOGONAL
+    ORTHOGONAL,
+    PERSPECTIVE
 };
 
 class Light {
@@ -44,7 +44,7 @@ public:
     glm::vec3 Position; // in world space
     glm::vec3 Direction; 
     glm::vec3 Strength;
-    float near_z = 2.5f, far_z = 100.0f;
+    float near_z = 0.1f, far_z = 100.0f;
 
     // 
     // view
