@@ -1,5 +1,5 @@
 /build/
 /.vscode/
 /.VSCodeCounter/
-/resources/output/
+/resources/output/*
 !/resources/output/.gitkeep
