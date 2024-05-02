@@ -66,7 +66,7 @@ void ModelOBJ::load(std::string file_name)
                 };
             }
             
-
+            // 顶点法线
             if(!attrib.normals.empty()) {
                 vertex.normal = {
                     attrib.normals[3 * index.normal_index + 0],
