@@ -18,6 +18,10 @@ def add_normals_to_obj(input_obj_path, output_obj_path):
     # 计算顶点法线
     mesh.compute_vertex_normals()
 
+    # 输出模型顶点数和三角形面片数
+    print(f"{input_obj_path} 的顶点数: {len(mesh.vertices)}")
+    print(f"{input_obj_path} 的三角形面片数: {len(mesh.triangles)}")
+
     # 保存 OBJ 文件，包括法线信息
     o3d.io.write_triangle_mesh(output_obj_path, mesh, write_vertex_normals=True)
     
