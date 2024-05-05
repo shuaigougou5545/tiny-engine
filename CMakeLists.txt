@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(tiny-engine VERSION 0.1.0 LANGUAGES C CXX)
+project(zeus-engine VERSION 0.1.0 LANGUAGES C CXX)
+set(CMAKE_C_COMPILER "clang")
+set(CMAKE_CXX_COMPILER "clang++")
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -34,18 +36,18 @@ include_directories(
     ${THIRD_PARTY_DIR}/tinyobjloader/include
 )
 
-add_executable(tiny-engine ${SOURCE_FILES})
+add_executable(zeus-engine ${SOURCE_FILES})
 
 # 链接系统库
 if(APPLE)
     find_library(COCOA_LIBRARY Cocoa)
     find_library(IOKIT_LIBRARY IOKit)
-    target_link_libraries(tiny-engine ${COCOA_LIBRARY} ${IOKIT_LIBRARY})
+    target_link_libraries(zeus-engine ${COCOA_LIBRARY} ${IOKIT_LIBRARY})
 endif()
 
 
 # 链接外部库
-target_link_libraries(tiny-engine
+target_link_libraries(zeus-engine
     ${THIRD_PARTY_DIR}/glfw/lib-${SYSTEM_ARCHITECTURE}/libglfw.3.dylib # 链接动态库
 )
 
