@@ -34,6 +34,16 @@ void ImguiManager::createCombo(const std::string& name, const std::vector<std::s
     pressed = ImGui::Button(name.c_str());
  }
 
+ void ImguiManager::createCheckbox(const std::string& name, bool& checked)
+ {
+	ImGui::Checkbox(name.c_str(), &checked);
+ }
+
+ void ImguiManager::createSliderInt(const std::string& name, int& value, int min, int max)
+ {
+	ImGui::SliderInt(name.c_str(), &value, min, max);
+ }
+
  void ImguiManager::createSliderFloat(const std::string& name, float& value, float min, float max)
  {
     ImGui::SliderFloat(name.c_str(), &value, min, max);
@@ -42,7 +52,7 @@ void ImguiManager::createCombo(const std::string& name, const std::vector<std::s
  void ImguiManager::createInputFloat3(const std::string& name, glm::vec3& value)
  {
     std::vector<float> temp = {value.x, value.y, value.z};
-    ImGui::InputFloat3(name.c_str(), temp.data());
+    ImGui::InputFloat3(name.c_str(), temp.data(), "%.1f");
     value.x = temp[0];
     value.y = temp[1];
     value.z = temp[2];

@@ -8,7 +8,10 @@
 
 class Fbo {
 public:
-    Fbo(int w, int h, const std::vector<std::string>& _color_attachment_names) : width(w), height(h), color_attachment_names(_color_attachment_names)
+    Fbo(int w, int h, 
+        const std::vector<std::string>& _color_attachment_names, 
+        GLuint color_wrap_mode = GL_REPEAT
+    ): width(w), height(h), color_attachment_names(_color_attachment_names)
     {
         // fbo
 
@@ -22,12 +25,16 @@ public:
         glGenTextures(numColorAttachments, color_texture_ids.data());
         for(int i = 0; i < numColorAttachments; ++i) {
             glBindTexture(GL_TEXTURE_2D, color_texture_ids[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, color_wrap_mode);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, color_wrap_mode);
+            if(color_wrap_mode == GL_CLAMP_TO_BORDER) {
+                GLfloat borderColor[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+            }
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, color_texture_ids[i], 0);
         }
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -120,7 +127,7 @@ public:
                     break;
             }
         } else {
-            std::cout << "[Fbo]: Create FBO successfully!" << std::endl;
+            // std::cout << "[Fbo]: Create FBO successfully!" << std::endl;
         }
     }
 

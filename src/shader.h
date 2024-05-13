@@ -9,7 +9,7 @@
 
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -124,11 +124,27 @@ public:
         }
     }
     // ------------------------------------------------------------------------
+    void setVec2(const std::string &name, glm::vec2 value) const
+    {
+        GLint location = getLocation(name);
+        if(location != -1) {
+            glUniform2f(location, value.x, value.y);
+        }
+    }
+    // ------------------------------------------------------------------------
     void setVec3(const std::string &name, glm::vec3 value) const
     {
         GLint location = getLocation(name);
         if(location != -1) {
             glUniform3f(location, value.x, value.y, value.z);
+        }
+    }
+    // ------------------------------------------------------------------------
+    void setMat3(const std::string &name, glm::mat3 value) const
+    {
+        GLint location = getLocation(name);
+        if(location != -1) {
+            glUniformMatrix3fv(location, 1, GL_FALSE, glm::value_ptr(value));
         }
     }
     // ------------------------------------------------------------------------
@@ -219,16 +235,19 @@ public:
                         }
 
                         shader_dict.emplace(name, std::make_shared<Shader>(vsFilename.c_str(), fsFilename.c_str()));
-                        shader_names.push_back(name);
                     }
                 }
             }
         } catch (fs::filesystem_error& e) {
             std::cerr << e.what() << std::endl;
         }
+
+        for(auto& p : shader_dict) {
+            shader_names.push_back(p.first);
+        }
     }
     
-    std::unordered_map<std::string, std::shared_ptr<Shader>> shader_dict;
+    std::map<std::string, std::shared_ptr<Shader>> shader_dict;
     std::vector<std::string> shader_names;
 };
 

@@ -1,10 +1,27 @@
 #include "utils.h"
 
 #include <vector>
+#include <fstream>
+#include <filesystem>
 #include "stb_image.h"
 #include "stb_image_write.h"
 #include "debug.h"
 
+namespace fs = std::filesystem;
+
+bool Utils::checkDirectory(const std::string& path) 
+{
+    std::string directory = path.substr(0, path.find_last_of("/\\"));
+    try {
+        if (!fs::exists(directory)) {
+            return fs::create_directories(directory);
+        }
+        return true; // 目录已存在
+    } catch (const std::exception& e) {
+        std::cerr << "Error creating directory: " << e.what() << std::endl;
+        return false;
+    }
+}
 
 void Utils::saveTextureToPng(
     GLuint texture_id, 
@@ -15,6 +32,7 @@ void Utils::saveTextureToPng(
     bool flipped
 )
 {
+    checkDirectory(filename);
     std::vector<unsigned char> data;
     data.resize(width * height * channels);
     glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -26,6 +44,20 @@ void Utils::saveTextureToPng(
     std::cout << "[Utils]: save texture[id:" << texture_id << " ] to png: " << filename << " successfully!" << std::endl;
 }
 
+void Utils::saveTextureToJpg(
+    const std::vector<unsigned char>& data,
+    const std::string& filename, 
+    int width,
+    int height,
+    int channels,
+    bool flipped
+)
+{
+    checkDirectory(filename);
+    stbi_flip_vertically_on_write(flipped);
+    stbi_write_jpg(filename.c_str(), width, height, channels, data.data(), width * channels);
+}
+
 void Utils::readFrameBufferColorAttachmentToPng(
     GLuint fbo_id,
     const std::string& filename,
@@ -33,18 +65,49 @@ void Utils::readFrameBufferColorAttachmentToPng(
     int height,
     int channels,
     bool flipped,
+    bool multi_attchments,
     int attachment_num
 )
 {
+    checkDirectory(filename);
     std::vector<unsigned char> data;
     data.resize(width * height * channels);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
-    glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment_num);
+    if(multi_attchments) {
+        // 单个颜色附件调用会报错
+        glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment_num);
+    }
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     stbi_flip_vertically_on_write(flipped);
     stbi_write_png(filename.c_str(), width, height, channels, data.data(), width * channels);
-    std::cout << "[Utils]: read framebuffer[id:" << fbo_id <<  "] color to png: " << filename << " successfully!" << std::endl;
+    std::cout << "[Utils]: read framebuffer[id:" << fbo_id <<  "] color[id: "<< attachment_num << "] to png: " << filename << " successfully!" << std::endl;
+}
+
+void Utils::readFrameBufferColorAttachmentToJpg(
+    GLuint fbo_id,
+    const std::string& filename,
+    int width,
+    int height,
+    int channels,
+    bool flipped,
+    bool multi_attchments, // 是否使用多个颜色附件
+    int attachment_num
+)
+{
+    checkDirectory(filename);
+    std::vector<unsigned char> data;
+    data.resize(width * height * channels);
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_id);
+    if(multi_attchments) {
+        // 单个颜色附件调用会报错
+        glReadBuffer(GL_COLOR_ATTACHMENT0 + attachment_num);
+    }
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, data.data());
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    stbi_flip_vertically_on_write(flipped);
+    stbi_write_jpg(filename.c_str(), width, height, channels, data.data(), width * channels);
+    std::cout << "[Utils]: read framebuffer[id:" << fbo_id <<  "] color[id: "<< attachment_num << "] to png: " << filename << " successfully!" << std::endl;
 }
 
 void Utils::readFrameBufferDepthAttachmentToPng(
@@ -55,6 +118,7 @@ void Utils::readFrameBufferDepthAttachmentToPng(
     bool flipped
 )
 {
+    checkDirectory(filename);
     std::vector<unsigned char> data(width * height);
     std::vector<GLfloat> temp(width * height);
     
@@ -115,8 +179,15 @@ unsigned int Utils::loadCubeMap(
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
 
-    std::vector<std::string> suffixes = { "right", "left", "top", "bottom", "front", "back" };
-    std::string extension = ".jpg";
+    std::vector<std::string> suffixes = { "posx", "negx", "posy", "negy", "posz", "negz" };
+    std::string extension;
+
+    // supported: .jpg .png
+    if(std::filesystem::exists(filepath + "/" + suffixes[0] + ".jpg")) {
+        extension = ".jpg";
+    } else if(std::filesystem::exists(filepath + "/" + suffixes[0] + ".png")) {
+        extension = ".png";
+    }
 
     std::vector<std::string> textures_faces;
     for(auto& suffix : suffixes)
@@ -146,5 +217,44 @@ unsigned int Utils::loadCubeMap(
     std::cout << "[Texture]: load cubemap texture " << filepath << " successfully!" << std::endl;
 
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+    glCheckError();
     return texture;
 }
+
+std::vector<glm::mat3> Utils::loadLightSHFromTxt(const std::string& filepath)
+{
+    std::ifstream file(filepath);
+
+    std::vector<glm::mat3> L(3); // 注意:默认使用2阶球谐(SHOrder=2)
+    for(int j = 0; j < 9; ++j)
+    {
+        for(int i = 0; i < 3; ++i)
+        {
+            int row = j / 3, col = j % 3;
+            file >> L[i][row][col];
+        }
+    }
+
+    file.close();
+    return L;
+}
+
+std::vector<glm::mat3> Utils::loadTransportSHFromTxt(const std::string& filepath)
+{
+    std::ifstream file(filepath);
+    int vertex_count;
+    file >> vertex_count;
+
+    std::vector<glm::mat3> LT(vertex_count); // 注意:默认使用2阶球谐(SHOrder=2)
+    
+    for(int i = 0; i < vertex_count; ++i)
+    {
+        auto& curr_mat3 = LT[i];
+        file >> curr_mat3[0][0] >> curr_mat3[0][1] >> curr_mat3[0][2]
+           >> curr_mat3[1][0] >> curr_mat3[1][1] >> curr_mat3[1][2]
+           >> curr_mat3[2][0] >> curr_mat3[2][1] >> curr_mat3[2][2];
+    }
+    file.close();
+    return LT;
+}
+

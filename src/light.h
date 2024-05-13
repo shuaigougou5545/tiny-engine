@@ -9,62 +9,86 @@
 #include <vector>
 
 
-enum LightProjectFunc {
-    ORTHOGONAL,
-    PERSPECTIVE
+enum LIGHT_TYPE {
+    DIRECTIONAL_LIGHT = 0,
+    POINT_LIGHT = 1,
+    SPOT_LIGHT = 2
+};
+
+struct OrthoFrustum {
+    float l = -5.f;
+    float r = +5.f;
+    float b = -5.f;
+    float t = +5.f;
+};
+
+struct PerspectiveFrustum {
+    float fovy = glm::radians(45.f);
+    float aspect_ratio = 1080.f / 720.f;
 };
 
 class Light {
 public:
-    Light(const glm::vec3& pos, 
-        const glm::vec3& strength, 
-        LightProjectFunc project_func, 
-        const glm::vec2& resolution,
-        const glm::vec3& target = glm::vec3(0.0)
-    ) : Position(pos), Strength(strength), ProjectionFunction(project_func)
-    {
-        Direction = target - pos;
-        aspect_ratio = resolution.x / resolution.y;
-        update();
-    }
+    LIGHT_TYPE type = POINT_LIGHT; // 0 - directional light, 1 - point light
+    glm::vec3 position = glm::vec3(0.f); // point light
+    glm::vec3 direction = glm::vec3(0.f, 0.f, 1.f); // directional light & point light
+    glm::vec3 strength = glm::vec3(1.f);
 
-    void update()
+    Light() { updateMatrix(); }
+
+    // Light Attenuation
+    float inner_cutoff = glm::radians(0.f); // min angle - spot light
+    float outer_cutoff = glm::radians(20.f); // max angle - spot light
+    float light_range = 100.f; // distance range - spot light
+    // Frustum
+    OrthoFrustum ortho_frustum;
+    PerspectiveFrustum perspective_frustum;
+
+    // Matrix
+    glm::mat4 view_matrix;
+    glm::mat4 projection_matrix;
+    float near = 0.1f;
+    float far = 100.0f;
+
+    void updateMatrix()
     {
-        view_matrix = glm::lookAt(Position, Position + Direction, glm::vec3(0.0, 1.0f, 0.0f));
-        switch(ProjectionFunction) {
-            case PERSPECTIVE:
-                projection_matrix = glm::perspective(fovy, aspect_ratio, near_z, far_z);
-                break;
-            case ORTHOGONAL:
-                projection_matrix = glm::ortho(left, right, bottom, top, near_z, far_z);
-                break;
+        switch (type)
+        {
+        case DIRECTIONAL_LIGHT: {
+            // directional light
+            // 对于平行光源来说,position位置并不重要,随意即可
+            view_matrix = glm::lookAt(position, position + direction, glm::vec3(0.0, 1.0f, 0.0f));
+            float l = ortho_frustum.l;
+            float r = ortho_frustum.r;
+            float b = ortho_frustum.b;
+            float t = ortho_frustum.t;
+            float n = near;
+            float f = far;
+            projection_matrix = glm::ortho(l, r, b, t, n, f);
+            break;
+        }
+        case POINT_LIGHT: {
+            view_matrix = glm::lookAt(position, position + direction, glm::vec3(0.0, 1.0f, 0.0f));
+            float fovy = perspective_frustum.fovy;
+            float aspect_ratio = perspective_frustum.aspect_ratio;
+            float n = near;
+            float f = far;
+            projection_matrix = glm::perspective(fovy, aspect_ratio, n, f);
+            break;
+        }
+        case SPOT_LIGHT: {
+            view_matrix = glm::lookAt(position, position + direction, glm::vec3(0.0, 1.0f, 0.0f));
+            float fovy = perspective_frustum.fovy;
+            float aspect_ratio = perspective_frustum.aspect_ratio;
+            float n = near;
+            float f = far;
+            projection_matrix = glm::perspective(fovy, aspect_ratio, n, f);
+            break;
+        }
+        default:
+            break;
         }
     }
-    
-    glm::vec3 Position; // in world space
-    glm::vec3 Direction; 
-    glm::vec3 Strength;
-    float near_z = 0.1f, far_z = 100.0f;
-
-    // 
-    // view
-    glm::mat4 view_matrix;
-
-    // 
-    // projection
-
-    // perspective
-    float fovy = glm::radians(45.0f);
-    float aspect_ratio = 1.0f;
-    // orthogonal
-    float left = -1.0;
-    float right = 1.0;
-    float bottom = -1.0;
-    float top = 1.0;
-    // project func
-    LightProjectFunc ProjectionFunction;
-    // project matrix
-    glm::mat4 projection_matrix; // perspective or orthogonal
 };
 
 #endif // LIGHT_H

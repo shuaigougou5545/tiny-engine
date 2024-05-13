@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(zeus-engine VERSION 0.1.0 LANGUAGES C CXX)
-set(CMAKE_C_COMPILER "clang")
-set(CMAKE_CXX_COMPILER "clang++")
+
+if(APPLE)
+    # apple使用Clang编译器
+    set(CMAKE_C_COMPILER "clang")
+    set(CMAKE_CXX_COMPILER "clang++")
+endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -42,9 +46,9 @@ add_executable(zeus-engine ${SOURCE_FILES})
 if(APPLE)
     find_library(COCOA_LIBRARY Cocoa)
     find_library(IOKIT_LIBRARY IOKit)
-    target_link_libraries(zeus-engine ${COCOA_LIBRARY} ${IOKIT_LIBRARY})
+    find_library(CORE_FOUNDATION_FRAMEWORK CoreFoundation)
+    target_link_libraries(zeus-engine ${COCOA_LIBRARY} ${IOKIT_LIBRARY} ${CORE_FOUNDATION_FRAMEWORK})
 endif()
-
 
 # 链接外部库
 target_link_libraries(zeus-engine

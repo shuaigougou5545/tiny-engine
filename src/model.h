@@ -70,6 +70,14 @@ public:
     void load(float width, float height, float depth);
 };
 
+class ModelSphere : public Model {
+public:
+    ModelSphere() { load(1.0f, 64, 64); model_name = "sphere"; }
+    ModelSphere(const std::string& name) { load(1.0f, 32, 32); model_name = name; }
+    
+    void load(float radius, int lat_div, int long_div);
+};
+
 class ModelQuad : public Model {
 public:
     ModelQuad() { load(); model_name = "quad"; }
@@ -104,11 +112,14 @@ class ModelManager {
 public:
     ModelManager() {}
     ModelManager(const Model& m) { model = std::make_shared<Model>(m); init(); }
+    ModelManager(const Model& m, const std::string& transport_sh_filename) { model = std::make_shared<Model>(m); init(transport_sh_filename); }
     ~ModelManager();
     void init();
+    void init(const std::string& transport_sh_filename);
     void draw();
 
     void reloadModel(const Model& m);
+    void reloadModel(const Model& m, const std::string& transport_sh_filename);
 
     unsigned int VBO, EBO, VAO;
     std::shared_ptr<Model> model = nullptr;
@@ -125,12 +136,12 @@ public:
         object_list.push_back(model_manager);
     }
 
-    int count()
+    int count() const
     {
         return object_list.size();
     }
 
-    std::shared_ptr<ModelManager> get(int index)
+    std::shared_ptr<ModelManager> get(int index) const
     {
         return object_list[index];
     }

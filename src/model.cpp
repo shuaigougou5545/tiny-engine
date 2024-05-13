@@ -7,6 +7,7 @@
 #include <tiny_obj_loader.h>
 #include <filesystem>
 #include "debug.h"
+#include "utils.h"
 namespace fs = std::filesystem;
 
 void Model::normalize()
@@ -96,7 +97,7 @@ void ModelOBJ::load(std::string file_name)
     aabb.center = (aabb.max + aabb.min) / 2.0f;
     aabb.extend = (aabb.max - aabb.min) / 2.0f;
 
-    std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
+    // std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
     // std::cout << "[Model]: vertices count: " << vertices.size() << std::endl;
     // std::cout << "[Model]: indices count: " << indices.size() << std::endl;
     // std::cout << "[Model]: aabb center: " << aabb.center.x << ", " << aabb.center.y <<
@@ -109,8 +110,6 @@ void ModelOBJ::load(std::string file_name)
 
 void ModelBox::load(float width, float height, float depth)
 {
-    // model_name = "box";
-
     vertices.clear();
     indices.clear();
 
@@ -205,13 +204,97 @@ void ModelBox::load(float width, float height, float depth)
     aabb.center = (aabb.max + aabb.min) / 2.0f;
     aabb.extend = (aabb.max - aabb.min) / 2.0f;
 
-    std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
+    // std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
     // std::cout << "[Model]: vertices count: " << vertices.size() << std::endl;
     // std::cout << "[Model]: indices count: " << indices.size() << std::endl;
     // std::cout << "[Model]: aabb center: " << aabb.center.x << ", " << aabb.center.y <<
     //     ", " << aabb.center.z << std::endl;
     // std::cout << "[Model]: aabb extend: " << aabb.extend.x << ", " << aabb.extend.y <<
     //     ", " << aabb.extend.z << std::endl;
+
+    // normalize();
+}
+
+void ModelSphere::load(float radius, int lat_div, int long_div)
+{
+    // lat: latitude 纬度
+    // long: longtitude 经度
+    vertices.clear();
+    indices.clear();
+
+    //
+    // Create the vertices.
+    //
+
+    std::vector<Vertex> v((lat_div + 1) * (long_div + 1));
+    float pi = glm::pi<float>();
+
+     for (int lat = 0; lat <= lat_div; ++lat) {
+        float theta = lat * pi / lat_div;
+        float sinTheta = sin(theta);
+        float cosTheta = cos(theta);
+
+        for (int lon = 0; lon <= long_div; ++lon) {
+            float phi = lon * 2 * pi / long_div;
+            float sinPhi = sin(phi);
+            float cosPhi = cos(phi);
+
+            glm::vec3 pos;
+            pos.x = cosPhi * sinTheta;
+            pos.y = cosTheta;
+            pos.z = sinPhi * sinTheta;
+            pos *= radius;
+
+            glm::vec3 normal;
+            normal.x = pos.x;
+            normal.y = pos.y;
+            normal.z = pos.z;
+            normal = glm::normalize(normal);
+
+            glm::vec2 texCoord;
+            texCoord.x = 1.0f - (float)lon / long_div;
+            texCoord.y = 1.0f - (float)lat / lat_div;
+
+            Vertex vert;
+            vert.pos = pos;
+            vert.normal = normal;
+            vert.texCoord = texCoord;
+
+            v[lat * (long_div + 1) + lon] = vert;
+        }
+    }
+
+    vertices.assign(&v[0], &v[(lat_div + 1) * (long_div + 1)]);
+
+	//
+	// Create the indices.
+	//
+
+    std::vector<uint32_t> i(lat_div * long_div * 6);
+    uint32_t index = 0;
+    for (uint32_t lat = 0; lat < lat_div; ++lat) {
+        for (uint32_t lon = 0; lon < long_div; ++lon) {
+            uint32_t first = (lat * (long_div + 1)) + lon;
+            uint32_t second = first + long_div + 1;
+
+            i[index++] = first;
+            i[index++] = second;
+            i[index++] = first + 1;
+
+            i[index++] = second;
+            i[index++] = second + 1;
+            i[index++] = first + 1;
+        }
+    }
+
+    indices.assign(&i[0], &i[lat_div * long_div * 6]);
+
+    aabb.min = glm::vec3(-radius, -radius, -radius);
+    aabb.max = glm::vec3(radius, radius, radius);
+    aabb.center = glm::vec3(0.0f, 0.0f, 0.0f);
+    aabb.extend = glm::vec3(radius, radius, radius);
+
+    // std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
 
     // normalize();
 }
@@ -250,7 +333,7 @@ void ModelQuad::load()
     aabb.center = (aabb.max + aabb.min) / 2.0f;
     aabb.extend = (aabb.max - aabb.min) / 2.0f;
 
-    std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
+    // std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
 }
 
 void ModelLibrary::loadModels(const std::string& file_path)
@@ -310,6 +393,48 @@ void ModelManager::init()
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
+void ModelManager::init(const std::string& filename)
+{
+    if(!model)
+    {
+        std::cout << "[ModelManager]: model is empty!" << std::endl;
+        return;
+    }
+
+    auto LT = Utils::loadTransportSHFromTxt(filename);
+    auto total_size = model->vertices.size() * sizeof(Vertex) + LT.size() * sizeof(glm::mat3);
+
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ARRAY_BUFFER, total_size, nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, model->vertices.size() * sizeof(Vertex), model->vertices.data());
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, model->indices.size() * sizeof(unsigned int), model->indices.data(), GL_STATIC_DRAW);
+    // Light Transport
+    auto offset = model->vertices.size() * sizeof(Vertex);
+    glBufferSubData(GL_ARRAY_BUFFER, offset, LT.size() * sizeof(glm::mat3), LT.data());
+    glCheckError();
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    int baseIndex = 3;
+    int stride = sizeof(glm::mat3);
+    for(int i = 0; i < 3; ++i)
+    {
+        glVertexAttribPointer(baseIndex + i, 3, GL_FLOAT, GL_FALSE, stride, (void*)(offset + i * sizeof(glm::vec3)));
+        glEnableVertexAttribArray(baseIndex + i);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
 void ModelManager::draw()
 {
     glBindVertexArray(VAO);
@@ -332,4 +457,16 @@ void ModelManager::reloadModel(const Model& m)
     init(); 
 
     // std::cout << "[Model]: reload model " << model->model_name << " successfully!" << std::endl;
+}
+
+void ModelManager::reloadModel(const Model& m, const std::string& transport_sh_filename)
+{
+    if(model && m.model_name == model->model_name) {
+        return;
+    }
+    glDeleteBuffers(1, &VBO);
+    glDeleteBuffers(1, &EBO);
+    glDeleteVertexArrays(1, &VAO);
+    model = std::make_shared<Model>(m);
+    init(transport_sh_filename); 
 }
