@@ -5,6 +5,7 @@
 #include <random>
 #include "stb_image.h"
 #include "stb_image_write.h"
+#include "utils.h"
 
 double Harmonics::SHEval(int l, int m, const glm::dvec3& dir)
 {
@@ -395,7 +396,9 @@ std::vector<std::vector<float>> Harmonics::computeVerticesSH(const Model& model)
     std::cout << "[Harmonics]:  Time taken " << elapsed_time << " seconds." << std::endl;
 
     // write into transport.txt
-    std::string out_file_name = "../resources/transport.txt";
+    std::string out_file_name = "../resources/obj/" + model.model_name + "/transport.txt"; // ../resources/obj/bunny/transport.txt
+    Utils::checkDirectory(out_file_name);
+    
     std::ofstream outFile(out_file_name);
     outFile << coeffs.size() << std::endl;
     for(int i = 0; i < coeffs.size(); ++i)

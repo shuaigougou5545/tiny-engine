@@ -155,6 +155,46 @@ public:
             glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(value));
         }
     }
+    // ------------------------------------------------------------------------
+    void setVec3Array(const std::string &name, std::vector<glm::vec3> values) const
+    {
+        GLint location = getLocation(name);
+        if (location != -1) {
+            glUniform3fv(location, values.size(), &values[0][0]);
+        }
+    }
+    // ------------------------------------------------------------------------
+    void setMat3Array(const std::string &name, std::vector<glm::mat3> values) const
+    {
+        GLint location = getLocation(name);
+        if (location != -1) {
+            glUniformMatrix3fv(location, values.size(), GL_FALSE, &values[0][0][0]);
+        }
+    }
+    // ------------------------------------------------------------------------
+    void setMat4Array(const std::string &name, std::vector<glm::mat4> values) const
+    {
+        GLint location = getLocation(name);
+        if (location != -1) {
+            glUniformMatrix4fv(location, values.size(), GL_FALSE, &values[0][0][0]);
+        }
+    }
+    // ------------------------------------------------------------------------ 
+    void setMat3Array2D(const std::string &name, const std::vector<std::vector<glm::mat3>> &values) const 
+    {
+        // 注意: GLSL中也需要写成1D Array
+        std::vector<glm::mat3> flattenedValues; // flattend 2D array to 1D
+        for (const auto &row : values) {
+            for (const auto &elem : row) {
+                flattenedValues.push_back(elem);
+            }
+        }
+
+        GLint location = getLocation(name);
+        if (location != -1) {
+            glUniformMatrix3fv(location, flattenedValues.size(), GL_FALSE, &flattenedValues[0][0][0]);
+        }
+    }
 
 private:
     // utility function for checking shader compilation/linking errors.

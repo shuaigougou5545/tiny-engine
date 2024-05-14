@@ -29,7 +29,7 @@ void Model::normalize()
 
 void ModelOBJ::load(std::string file_name)
 {
-    model_name = file_name;
+    // model_name = file_name;
 
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -203,19 +203,9 @@ void ModelBox::load(float width, float height, float depth)
     aabb.max = glm::vec3(+w2, +h2, +d2);
     aabb.center = (aabb.max + aabb.min) / 2.0f;
     aabb.extend = (aabb.max - aabb.min) / 2.0f;
-
-    // std::cout << "[Model]: load model " << model_name << " successfully!" << std::endl;
-    // std::cout << "[Model]: vertices count: " << vertices.size() << std::endl;
-    // std::cout << "[Model]: indices count: " << indices.size() << std::endl;
-    // std::cout << "[Model]: aabb center: " << aabb.center.x << ", " << aabb.center.y <<
-    //     ", " << aabb.center.z << std::endl;
-    // std::cout << "[Model]: aabb extend: " << aabb.extend.x << ", " << aabb.extend.y <<
-    //     ", " << aabb.extend.z << std::endl;
-
-    // normalize();
 }
 
-void ModelSphere::load(float radius, int lat_div, int long_div)
+void ModelSphere::load(float radius)
 {
     // lat: latitude 纬度
     // long: longtitude 经度
@@ -344,6 +334,22 @@ void ModelLibrary::loadModels(const std::string& file_path)
     try {
         if (fs::exists(path) && fs::is_directory(path)) {
             for (const auto& entry : fs::directory_iterator(path)) {
+                // 子目录下的obj,不包括not-included
+                if(entry.is_directory() && entry.path().stem().string() != "not-included") {
+                    for(const auto& sub_entry : fs::directory_iterator(entry.path())) {
+                        if(sub_entry.path().extension() == ".obj") {
+                            std::string name = sub_entry.path().stem().string();
+                            std::string filename = sub_entry.path().string();
+                            std::shared_ptr<ModelOBJ> model_ptr = std::make_shared<ModelOBJ>(filename);
+                            model_ptr->model_name = name;
+                            model_dict.emplace(name, model_ptr);
+                            
+                            model_names.push_back(name);
+                        }
+                    }
+                }
+
+                // obj
                 if (entry.path().extension() == ".obj") {
                     // .path(): 完整路径; 
                     // .path().filename(): 纯文件+后缀; 
@@ -391,6 +397,7 @@ void ModelManager::init()
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    use_spherical_harmonics = false;
 }
 
 void ModelManager::init(const std::string& filename)
@@ -433,6 +440,8 @@ void ModelManager::init(const std::string& filename)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    std::cout << "[ModelManager]: init model " << model->model_name << " with SH successfully!" << std::endl;
+    use_spherical_harmonics = true;
 }
 
 void ModelManager::draw()
@@ -443,10 +452,9 @@ void ModelManager::draw()
 
 void ModelManager::reloadModel(const Model& m)
 {
-    if(model && m.model_name == model->model_name) {
+    if(model && m.model_name == model->model_name && use_spherical_harmonics == false) {
         return;
     }
-        
     
     glDeleteBuffers(1, &VBO);
     glDeleteBuffers(1, &EBO);
@@ -455,13 +463,13 @@ void ModelManager::reloadModel(const Model& m)
     model = std::make_shared<Model>(m);
 
     init(); 
-
+    use_spherical_harmonics = false;
     // std::cout << "[Model]: reload model " << model->model_name << " successfully!" << std::endl;
 }
 
 void ModelManager::reloadModel(const Model& m, const std::string& transport_sh_filename)
 {
-    if(model && m.model_name == model->model_name) {
+    if(model && m.model_name == model->model_name && use_spherical_harmonics == true) {
         return;
     }
     glDeleteBuffers(1, &VBO);
@@ -469,4 +477,5 @@ void ModelManager::reloadModel(const Model& m, const std::string& transport_sh_f
     glDeleteVertexArrays(1, &VAO);
     model = std::make_shared<Model>(m);
     init(transport_sh_filename); 
+    use_spherical_harmonics = true;
 }

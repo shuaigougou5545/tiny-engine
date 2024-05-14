@@ -13,9 +13,7 @@ uniform mat4 u_Model;
 uniform mat4 u_View;
 uniform mat4 u_Projection;
 // light(rgb)
-uniform mat3 u_PrecomputeL0; 
-uniform mat3 u_PrecomputeL1;
-uniform mat3 u_PrecomputeL2;
+uniform mat3 u_PrecomputeL[3]; 
 
 float L_dot_LT(mat3 L, mat3 LT) 
 {
@@ -25,14 +23,10 @@ float L_dot_LT(mat3 L, mat3 LT)
 void main()
 {
     mat3 LT = mat3(a_PrecomputeLT0, a_PrecomputeLT1, a_PrecomputeLT2);
-    mat3 L[3];
-    L[0] = u_PrecomputeL0;
-    L[1] = u_PrecomputeL1;
-    L[2] = u_PrecomputeL2;
 
     for(int i = 0; i < 3; ++i)
     {
-        v_Color[i] = L_dot_LT(L[i], LT);
+        v_Color[i] = L_dot_LT(u_PrecomputeL[i], LT);
     }
 
     gl_Position = u_Projection * u_View * u_Model * vec4(a_Pos, 1.0);

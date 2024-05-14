@@ -10,7 +10,7 @@ Probe::Probe(glm::vec3 pos, const std::string& probe_name, int width, int height
 
     // load model
     ModelSphere sphere;
-    model_manager = std::make_shared<ModelManager>(sphere, "../resources/transport.txt");
+    model_manager = std::make_shared<ModelManager>(sphere, "../resources/obj/sphere/transport.txt"); // 注意路径
 }
 
 void Probe::render(const ModelManagerList& model_manager_list, std::shared_ptr<Shader> shader, std::shared_ptr<Light> light)
@@ -158,9 +158,7 @@ void Probe::drawLightProbeFromSH(const glm::mat4& view, const glm::mat4& project
     prt_shader->setMat4("u_Projection", projection);
     
     auto& L = coeffs;
-    prt_shader->setMat3("u_PrecomputeL0", L[0]);
-    prt_shader->setMat3("u_PrecomputeL1", L[1]);
-    prt_shader->setMat3("u_PrecomputeL2", L[2]);
+    prt_shader->setMat3Array("u_PrecomputeL", L);
 
     // draw
     model_manager->draw();

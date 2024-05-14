@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <map>
+#include <unordered_set>
 
 #include "debug.h"
 #include "model.h"
@@ -17,15 +18,13 @@
 #include "sample.h"
 #include "harmonics.h"
 #include "probe.h"
+#include "skybox.h"
 
 const int screen_width = 1080; // 800
 const int screen_height = 720; // 600
 
 // camera
 Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));  // (glm::vec3(8.f), glm::vec3(0.0f)); 
-
-// std::string skybox_filepath = "../resources/texture/Baked-CubeMap/probe";
-std::string skybox_filepath = "../resources/texture/Test";
 
 float lastX = screen_width / 2.0f;
 float lastY = screen_height / 2.0f;
@@ -115,14 +114,16 @@ int main()
     model_library.loadModels();
 
     ModelSphere sphere;
-    sphere.scale = glm::vec3(0.f); // for test
+    // sphere.scale = glm::vec3(0.f); // for test
     model_library.add(sphere.model_name, sphere);
 
     ModelBox skybox;
 
     int width, height, channels;
     unsigned int texture = Utils::loadTexture("../resources/texture/container.jpg", width, height, channels);
-    unsigned int skybox_texture = Utils::loadCubeMap(skybox_filepath, width, height, channels);
+
+    SkyboxLibrary skybox_library;
+    skybox_library.loadSkybox();
 
     ModelBox box_l("left"), box_r("right"), box_b("bottom"), box_f("front"), box_t("top");
     float thick = 0.1f;
@@ -156,7 +157,6 @@ int main()
     // boxf_manager->albedo = glm::vec3(1.0, 1.0, 1.0);
     // boxb_manager->albedo = glm::vec3(1.0, 1.0, 0.0);
     // boxt_manager->albedo = glm::vec3(0.0, 1.0, 1.0);
-
     
     ModelBox light_box("light_box");
     light_box.pos = light.position;
@@ -169,7 +169,7 @@ int main()
     //
     // init
 
-    std::shared_ptr<ModelManager> model_manager = std::make_shared<ModelManager>();
+    std::shared_ptr<ModelManager> model_manager = std::make_shared<ModelManager>(sphere);
     std::shared_ptr<ModelManager> skybox_manager = std::make_shared<ModelManager>(skybox);
 
     //
@@ -215,11 +215,13 @@ int main()
     // render objects
     ModelManagerList model_manager_list;
     model_manager_list.add(model_manager);
+
     model_manager_list.add(boxl_manager);
     model_manager_list.add(boxb_manager);
     model_manager_list.add(boxf_manager);
     model_manager_list.add(boxr_manager);
     model_manager_list.add(boxt_manager);
+
     model_manager_list.add(light_manager);
 
     NoiseTexture noise_texture(screen_width, screen_height);
@@ -227,11 +229,48 @@ int main()
     //
     // Precompute
     Harmonics SH;
-    auto coeffs_light = SH.computeCubemapSH(skybox_filepath);
-    auto coeffs_transport = SH.computeVerticesSH(sphere);
+    // light
+    for(auto& p : skybox_library.skybox_dict)
+    {
+        std::string name = p.first;
+        auto& skybox = p.second;
+        std::string filepath = skybox_library.getFilepath(name);
+
+        // only compute once
+        // auto coeffs_light = SH.computeCubemapSH(filepath); 
+        // std::cout << name << ": " << coeffs_light.size() << std::endl;
+    }
+
+    // light transport
+    std::unordered_set<std::string> objects_supported_SH;
+    for(auto& p : model_library.model_dict)
+    {
+        std::string name = p.first;
+        auto& model = p.second;
+        
+        // only compute once
+        // auto coeffs_transport = SH.computeVerticesSH(*model); 
+        // std::cout << name << ": " << coeffs_transport.size() << std::endl;
+
+        objects_supported_SH.insert(name);
+    }
+    // light transport - cornell box
+    auto box_manager_list = {boxl_manager, boxb_manager, boxf_manager, boxr_manager, boxt_manager};
+    for(auto& box_manager : box_manager_list)
+    {
+        // only compute once
+        // auto coeffs_transport = SH.computeVerticesSH(*(box_manager->model)); 
+        // std::cout << box_manager->model->model_name << ": " << coeffs_transport.size() << std::endl;
+
+        std::string filename = "../resources/obj/" + box_manager->model->model_name + "/transport.txt";
+        box_manager->reloadModel(*(box_manager->model), filename);
+        std::cout << filename << std::endl;
+    }
+   
+    
     // return 0;
 
-    const int r = 1;
+    const int r = 2;
     const float interval = 3.0f;
     std::vector<std::shared_ptr<Probe>> probes;
     probes.reserve(r * r * r);
@@ -249,7 +288,6 @@ int main()
             }
         }
     }
-
 
     while(!glfwWindowShouldClose(window))
     {
@@ -299,9 +337,11 @@ int main()
         imgui_manager.createCombo("Model", model_library.model_names, curr_model_index);
         auto curr_model = model_library.get(model_library.model_names[curr_model_index]);
 
-        if(curr_model->model_name == "sphere") {
-            model_manager->reloadModel(*curr_model, "../resources/transport.txt");
+        if(objects_supported_SH.count(curr_model->model_name)) {
+            // SH
+            model_manager->reloadModel(*curr_model, "../resources/obj/" + curr_model->model_name + "/transport.txt");
         } else {
+            // traditional
             model_manager->reloadModel(*curr_model);
         }
 
@@ -315,8 +355,14 @@ int main()
         bool button = false;
         imgui_manager.createButton("Capture", button);
 
-        static bool skybox_button = false;
-        imgui_manager.createCheckbox("Skybox", skybox_button);
+        static bool skybox_button = true;
+        imgui_manager.createCheckbox("SkyboxEnabled", skybox_button);
+
+        static int skybox_index = 0;
+        imgui_manager.createCombo("Skybox", skybox_library.skybox_names, skybox_index);
+        auto skybox_name = skybox_library.skybox_names[skybox_index];
+        unsigned int skybox_texture = skybox_library.get(skybox_name);
+        std::string skybox_filepath = skybox_library.getFilepath(skybox_name);
 
         static bool light_button = true;
         imgui_manager.createCheckbox("Light", light_button);
@@ -418,7 +464,10 @@ int main()
         if(first) {
             for(auto& probe_ptr : probes)
             {
-                probe_ptr->render(model_manager_list, bake_shader, std::make_shared<Light>(light));
+                auto probe_manager_list = model_manager_list;
+                probe_manager_list.get(0)->model->scale = glm::vec3(0.0f); // 中心物体不展示
+
+                probe_ptr->render(probe_manager_list, bake_shader, std::make_shared<Light>(light));
             }
             glfwGetFramebufferSize(window, &width, &height);
             glViewport(0, 0, width, height);
@@ -544,15 +593,27 @@ int main()
                 glActiveTexture(GL_TEXTURE4);
                 glBindTexture(GL_TEXTURE_2D, noise_texture.texture_id);
                 shader_list[2]->setInt("u_Noise", 4);
-                
                 curr_model_manager->draw();
             } else if(shader_list[2]->shader_name == "quad") {
                 quad_manager->draw();
             } else if(shader_list[2]->shader_name == "prt") {
                 auto L = Utils::loadLightSHFromTxt(skybox_filepath + "/light.txt");
-                shader_list[2]->setMat3("u_PrecomputeL0", L[0]);
-                shader_list[2]->setMat3("u_PrecomputeL1", L[1]);
-                shader_list[2]->setMat3("u_PrecomputeL2", L[2]);
+                shader_list[2]->setMat3Array("u_PrecomputeL", L);
+                curr_model_manager->draw();
+            } else if(shader_list[2]->shader_name == "light-probe-gi") {
+                std::string filepath = "../resources/texture/Baked-CubeMap/";
+                auto L0 = Utils::loadLightSHFromTxt(filepath + "probe1" + "/light.txt");
+                auto L1 = Utils::loadLightSHFromTxt(filepath + "probe2" + "/light.txt");
+                auto L2 = Utils::loadLightSHFromTxt(filepath + "probe3" + "/light.txt");
+                auto L3 = Utils::loadLightSHFromTxt(filepath + "probe4" + "/light.txt");
+                shader_list[2]->setMat3Array("u_PrecomputeL0", L0);
+                shader_list[2]->setMat3Array("u_PrecomputeL1", L1);
+                shader_list[2]->setMat3Array("u_PrecomputeL2", L2);
+                shader_list[2]->setMat3Array("u_PrecomputeL3", L3);
+                shader_list[2]->setVec3("u_PosL0", probes[0]->center);
+                shader_list[2]->setVec3("u_PosL1", probes[1]->center);
+                shader_list[2]->setVec3("u_PosL2", probes[2]->center);
+                shader_list[2]->setVec3("u_PosL3", probes[3]->center);
                 curr_model_manager->draw();
             } else {
                 curr_model_manager->draw();

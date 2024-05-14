@@ -72,10 +72,12 @@ public:
 
 class ModelSphere : public Model {
 public:
-    ModelSphere() { load(1.0f, 64, 64); model_name = "sphere"; }
-    ModelSphere(const std::string& name) { load(1.0f, 32, 32); model_name = name; }
+    ModelSphere() { load(1.0f); model_name = "sphere"; }
+    ModelSphere(const std::string& name) { load(1.0f); model_name = name; }
     
-    void load(float radius, int lat_div, int long_div);
+    void load(float radius);
+    int lat_div = 64;
+    int long_div = 64;
 };
 
 class ModelQuad : public Model {
@@ -128,6 +130,8 @@ public:
     glm::vec3 albedo = glm::vec3(1.0f);
     float metallic = 0.7f;
     float roughness = 0.3f;
+
+    bool use_spherical_harmonics = false;
 };
 
 class ModelManagerList {
