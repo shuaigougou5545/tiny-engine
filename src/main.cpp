@@ -600,7 +600,8 @@ int main()
                 auto L = Utils::loadLightSHFromTxt(skybox_filepath + "/light.txt");
                 shader_list[2]->setMat3Array("u_PrecomputeL", L);
                 curr_model_manager->draw();
-            } else if(shader_list[2]->shader_name == "light-probe-gi") {
+            } else if(shader_list[2]->shader_name == "light-probe-gi"
+                || shader_list[2]->shader_name == "light-probe-gi(fragment)") {
                 std::string filepath = "../resources/texture/Baked-CubeMap/";
                 auto L0 = Utils::loadLightSHFromTxt(filepath + "probe1" + "/light.txt");
                 auto L1 = Utils::loadLightSHFromTxt(filepath + "probe2" + "/light.txt");
