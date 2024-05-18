@@ -18,7 +18,7 @@
 
 class Probe {
 public:
-    Probe(glm::vec3 pos, const std::string& probe_name = "probe", int width = 512, int height = 512); 
+    Probe(glm::vec3 pos, const std::string& probe_name = "probe", int width = 256, int height = 256); 
 
     void render(const ModelManagerList& model_manager_list, std::shared_ptr<Shader> shader, std::shared_ptr<Light> light); // 会改变视口
     void drawLightProbeFromCubeMap(const glm::mat4& view, const glm::mat4& projection, const glm::vec3& scale = glm::vec3(0.2f)); // Probe可视化

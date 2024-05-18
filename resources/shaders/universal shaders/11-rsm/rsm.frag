@@ -35,6 +35,10 @@ uniform vec3 u_Debug;
 
 const float PI = 3.1415926;
 
+float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
 vec2 hashIntToVec2(int n) {
     float n_float = float(n);
     float a = fract(sin(n_float) * 43758.5453123);
@@ -82,67 +86,32 @@ void main()
 
     vec3 color = vec3(0.0);
 
-    //
-    // indirect light
-    //
-    vec3 indirect = vec3(0.0);
     for(int i = 0; i < u_SampleCount; ++i)
     {
         vec2 offset = hashIntToVec2(i);
-        float s1 = texture(u_Noise, fragCoord + offset).r;
-        float s2 = texture(u_Noise, fragCoord + offset).g;
+        float s1 = texture(u_Noise, fragCoord).r;
+        float s2 = texture(u_Noise, fragCoord).g;
 
-        // vec2 radius = u_SampleRadius * dxdy;
-        // vec2 random_offset = vec2(radius.x * s1 * sin(2.0 * PI * s2) + radius.y * s1 * cos(2.0 * PI * s2));
+        vec2 radius = u_SampleRadius * dxdy;
+        vec2 random_offset = vec2(radius.x * s1 * sin(2.0 * PI * s2) + radius.y * s1 * cos(2.0 * PI * s2));
         // float weight = s1 * s1;
-        // vec2 sampleuv = uv_light + random_offset;
+        vec2 sampleuv = uv_light + random_offset;
 
-        vec2 sampleuv = uv_light + u_Debug.xy;
-
-
-        // secondary light source - q
-        // vec3 q_normalW = normalize(texture(u_ReflectorNormalW, sampleuv).xyz);
-        vec3 q_posW = texture(u_ReflectorPosW, sampleuv).xyz;
+        // // vec3 q_normalW = normalize(texture(u_ReflectorNormalW, sampleuv).xyz);
+        // vec3 q_posW = texture(u_ReflectorPosW, sampleuv).xyz;
         vec3 q_flux = texture(u_ReflectorFlux, sampleuv).xyz;
 
-        // vec3 pq = v_PosW - q_posW; // p - q
+        // // vec3 pq = v_PosW - q_posW; // p - q
 
-        // float cos1 = max(dot(v_NormalW, -pq), 0.0); // θ
-        // float cos2 = max(dot(q_normalW, pq), 0.0); // θ'
+        // // float cos1 = max(dot(v_NormalW, -pq), 0.0); // θ
+        // // float cos2 = max(dot(q_normalW, pq), 0.0); // θ'
 
-        // indirect += q_flux * cos1 * cos2 / pow(length(v_PosW - q_posW), 4.0) * weight;
+        // // indirect += q_flux * cos1 * cos2 / pow(length(v_PosW - q_posW), 4.0) * weight;
 
-        // indirect += q_flux;
 
-        color = q_flux;
-        color = vec3(uv_light + u_Debug.xy, 0.0);
-
-        // if(sampleuv.x > 1.0 || sampleuv.x < 0.0 || sampleuv.y > 1.0 || sampleuv.y < 0.0)
-        //     color = vec3(1.0);
+        color += q_flux / u_SampleCount;
     }
-    // indirect = clamp(indirect / u_SampleCount, 0.0, 1.0);
-    // color = indirect / u_SampleCount;
-
-    //
-    // direct light
-    //
-    // float attenuation = 1.0;
-    // // float attenuation = u_Kdis / (dis * dis);
-    // // float attenuation = light_attenuation(v_PosW);
-    // vec3 radiance = u_LightStrength * attenuation; // Li
-
-    // // diffuse
-    // float diff = max(dot(N, L), 0.0);
-    // vec3 diffuse = radiance * albedo * diff;
-
-    // // specular
-    // float c = max(dot(N, H), 0.0);
-    // float spec = c * c * c * c * c;
-    // vec3 specular = radiance * albedo * spec * u_Shiness;
-
-    // vec3 direct = diffuse + specular;
-
-    // color += direct;
+    color = clamp(color / u_SampleCount, 0.0, 1.0);
 
     // color = pow(color, vec3(1.0/2.2));
 

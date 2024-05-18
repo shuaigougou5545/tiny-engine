@@ -36,8 +36,10 @@ void main()
     vec3 V = normalize(u_CameraPos - v_PosW);
     vec3 R = reflect(-L, normalW);
 
-    float attenuation = 1.0;
-    // float attenuation = u_Kdis / (dis * dis);
+    float dis = length(u_LightPos - v_PosW);
+    
+    // float attenuation = 1.0;
+    float attenuation = u_Kdis / (dis * dis);
     // float attenuation = light_attenuation(v_PosW);
     vec3 radiance = u_LightStrength * attenuation; // Li
 

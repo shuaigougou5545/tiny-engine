@@ -66,6 +66,7 @@ void Probe::render(const ModelManagerList& model_manager_list, std::shared_ptr<S
             shader->setFloat("u_LightInnerCutoff", cos(light->inner_cutoff));
             shader->setFloat("u_LightOuterCutoff", cos(light->outer_cutoff));
             shader->setFloat("u_LightRange", light->light_range);
+            shader->setFloat("u_Kdis", 40.0f);
 
             curr_model_manager->draw();
         }

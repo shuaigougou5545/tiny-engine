@@ -48,17 +48,35 @@ vec4 computeBarycentricCoordinates(vec3 p, vec3 a, vec3 b, vec3 c, vec3 d)
     return vec4(va6 / sum, vb6 / sum, vc6 / sum, vd6 / sum);
 }
 
+vec4 computeDistanceWeights(vec3 p, vec3 a, vec3 b, vec3 c, vec3 d)
+{
+    // 距离控制权重
+    float da = distance(p, a);
+    float db = distance(p, b);
+    float dc = distance(p, c);
+    float dd = distance(p, d);
+    float sum = da + db + dc + dd;
+
+    // 避免除以零
+    if (sum == 0.0) {
+        return vec4(0.25); // 平均分配权重
+    }
+
+    return vec4(1.0 / da, 1.0 / db, 1.0 / dc, 1.0 / dd) / sum;
+}
+
 void main()
 {
     mat3 LT = mat3(a_PrecomputeLT0, a_PrecomputeLT1, a_PrecomputeLT2);
 
     vec3 posW = (u_Model * vec4(a_Pos, 1.0)).xyz;
-    vec4 baryCoords = computeBarycentricCoordinates(posW, u_PosL0, u_PosL1, u_PosL2, u_PosL3);
+    vec4 weightCoords = computeBarycentricCoordinates(posW, u_PosL0, u_PosL1, u_PosL2, u_PosL3);
+    // vec4 weightCoords = computeDistanceWeights(posW, u_PosL0, u_PosL1, u_PosL2, u_PosL3);
 
     mat3 interpolatedL[3];
-    interpolatedL[0] = baryCoords.x * u_PrecomputeL0[0] + baryCoords.y * u_PrecomputeL1[0] + baryCoords.z * u_PrecomputeL2[0] + baryCoords.w * u_PrecomputeL3[0];
-    interpolatedL[1] = baryCoords.x * u_PrecomputeL0[1] + baryCoords.y * u_PrecomputeL1[1] + baryCoords.z * u_PrecomputeL2[1] + baryCoords.w * u_PrecomputeL3[1];
-    interpolatedL[2] = baryCoords.x * u_PrecomputeL0[2] + baryCoords.y * u_PrecomputeL1[2] + baryCoords.z * u_PrecomputeL2[2] + baryCoords.w * u_PrecomputeL3[2];
+    interpolatedL[0] = weightCoords.x * u_PrecomputeL0[0] + weightCoords.y * u_PrecomputeL1[0] + weightCoords.z * u_PrecomputeL2[0] + weightCoords.w * u_PrecomputeL3[0];
+    interpolatedL[1] = weightCoords.x * u_PrecomputeL0[1] + weightCoords.y * u_PrecomputeL1[1] + weightCoords.z * u_PrecomputeL2[1] + weightCoords.w * u_PrecomputeL3[1];
+    interpolatedL[2] = weightCoords.x * u_PrecomputeL0[2] + weightCoords.y * u_PrecomputeL1[2] + weightCoords.z * u_PrecomputeL2[2] + weightCoords.w * u_PrecomputeL3[2];
 
     for(int i = 0; i < 3; ++i)
     {

@@ -8,6 +8,7 @@ layout(location = 4) in vec3 a_PrecomputeLT1;
 layout(location = 5) in vec3 a_PrecomputeLT2; 
 
 out vec3 v_PosW;
+out vec3 v_NormalW;
 out vec3 v_PrecomputeLT0;
 out vec3 v_PrecomputeLT1;
 out vec3 v_PrecomputeLT2;
@@ -19,6 +20,8 @@ uniform mat4 u_Projection;
 void main()
 {
     v_PosW = (u_Model * vec4(a_Pos, 1.0)).xyz;
+    v_NormalW = mat3(transpose(inverse(u_Model))) * a_Normal;
+
     v_PrecomputeLT0 = a_PrecomputeLT0;
     v_PrecomputeLT1 = a_PrecomputeLT1;
     v_PrecomputeLT2 = a_PrecomputeLT2;

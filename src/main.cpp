@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <map>
 #include <unordered_set>
+#include <algorithm>
 
 #include "debug.h"
 #include "model.h"
@@ -154,6 +155,11 @@ int main()
     boxl_manager->albedo = glm::vec3(0.0, 1.0, 0.0); 
     boxr_manager->albedo = glm::vec3(1.0, 0.0, 0.0);
 
+    // boxf_manager->albedo = glm::vec3(0.0, 1.0, 1.0); // test
+    // boxt_manager->albedo = glm::vec3(1.0, 0.0, 1.0); // test
+    // boxb_manager->albedo = glm::vec3(1.0, 1.0, 0.0); // test
+    
+
     // boxf_manager->albedo = glm::vec3(1.0, 1.0, 1.0);
     // boxb_manager->albedo = glm::vec3(1.0, 1.0, 0.0);
     // boxt_manager->albedo = glm::vec3(0.0, 1.0, 1.0);
@@ -270,9 +276,10 @@ int main()
     
     // return 0;
 
-    const int r = 2;
-    const float interval = 3.0f;
+    const int r = 0;
+    const float interval = 2.0f; // [2->4.0]
     std::vector<std::shared_ptr<Probe>> probes;
+    
     probes.reserve(r * r * r);
     int index = 0;
     for(int i = 0; i < r; ++i)
@@ -355,7 +362,7 @@ int main()
         bool button = false;
         imgui_manager.createButton("Capture", button);
 
-        static bool skybox_button = true;
+        static bool skybox_button = false;
         imgui_manager.createCheckbox("SkyboxEnabled", skybox_button);
 
         static int skybox_index = 0;
@@ -364,10 +371,14 @@ int main()
         unsigned int skybox_texture = skybox_library.get(skybox_name);
         std::string skybox_filepath = skybox_library.getFilepath(skybox_name);
 
+        static bool probe_button = false;
+        imgui_manager.createCheckbox("LightProbeVisualization", probe_button);
+
         static bool light_button = true;
         imgui_manager.createCheckbox("Light", light_button);
         static float shiness = 0.3f;
         static float k_dis = 100.0f;
+        static float indirect = 0.1f;
         if(light_button) 
         {
             ImGui::Begin("Light");
@@ -388,6 +399,7 @@ int main()
 
             imgui_manager.createSliderFloat("Shiness", shiness, 0.0f, 1.0f);
             imgui_manager.createSliderFloat("k_dis", k_dis, 1.0, 500.0);
+            imgui_manager.createSliderFloat("indirect", indirect, 0.0f, 1.0f);
             
             light.updateMatrix();
 
@@ -438,7 +450,9 @@ int main()
 
         static glm::vec3 scale = model_manager->model->scale;
         imgui_manager.createSliderFloat3("Scale", scale, 0.0f, 5.0f);
+        scale = glm::vec3(0.0); // for test
         model_manager->model->scale = scale;
+        
 
         static float roughness = 0.3f;
         imgui_manager.createSliderFloat("Roughness", roughness);
@@ -531,6 +545,7 @@ int main()
                 curr_shader->setFloat("u_LightInnerCutoff", cos(light.inner_cutoff));
                 curr_shader->setFloat("u_LightOuterCutoff", cos(light.outer_cutoff));
                 curr_shader->setFloat("u_LightRange", light.light_range);
+                curr_shader->setFloat("u_Indirect", indirect);
                 // Sample
                 curr_shader->setInt("u_SampleCount", sample_count);
                 curr_shader->setFloat("u_SampleRadius", sample_radius);
@@ -601,20 +616,46 @@ int main()
                 shader_list[2]->setMat3Array("u_PrecomputeL", L);
                 curr_model_manager->draw();
             } else if(shader_list[2]->shader_name == "light-probe-gi"
-                || shader_list[2]->shader_name == "light-probe-gi(fragment)") {
+                || shader_list[2]->shader_name == "phong_lpgi") {
                 std::string filepath = "../resources/texture/Baked-CubeMap/";
-                auto L0 = Utils::loadLightSHFromTxt(filepath + "probe1" + "/light.txt");
-                auto L1 = Utils::loadLightSHFromTxt(filepath + "probe2" + "/light.txt");
-                auto L2 = Utils::loadLightSHFromTxt(filepath + "probe3" + "/light.txt");
-                auto L3 = Utils::loadLightSHFromTxt(filepath + "probe4" + "/light.txt");
-                shader_list[2]->setMat3Array("u_PrecomputeL0", L0);
-                shader_list[2]->setMat3Array("u_PrecomputeL1", L1);
-                shader_list[2]->setMat3Array("u_PrecomputeL2", L2);
-                shader_list[2]->setMat3Array("u_PrecomputeL3", L3);
-                shader_list[2]->setVec3("u_PosL0", probes[0]->center);
-                shader_list[2]->setVec3("u_PosL1", probes[1]->center);
-                shader_list[2]->setVec3("u_PosL2", probes[2]->center);
-                shader_list[2]->setVec3("u_PosL3", probes[3]->center);
+                // auto L0 = Utils::loadLightSHFromTxt(filepath + "probe1" + "/light.txt");
+                // auto L1 = Utils::loadLightSHFromTxt(filepath + "probe2" + "/light.txt");
+                // auto L2 = Utils::loadLightSHFromTxt(filepath + "probe3" + "/light.txt");
+                // auto L3 = Utils::loadLightSHFromTxt(filepath + "probe4" + "/light.txt");
+                // auto L4 = Utils::loadLightSHFromTxt(filepath + "probe5" + "/light.txt");
+                // auto L5 = Utils::loadLightSHFromTxt(filepath + "probe6" + "/light.txt");
+                // auto L6 = Utils::loadLightSHFromTxt(filepath + "probe7" + "/light.txt");
+                // auto L7 = Utils::loadLightSHFromTxt(filepath + "probe8" + "/light.txt");
+
+                glm::vec3 pos = curr_model_manager->model->pos;
+                std::vector<std::pair<int, float>> distances;
+                for(int i = 0; i < probes.size(); ++i)
+                {
+                    float dis = glm::distance(pos, probes[i]->center);
+                    distances.push_back(std::make_pair(i, dis));
+                }
+                std::sort(distances.begin(), distances.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
+                    return a.second < b.second;
+                });
+
+                std::vector<int> nearest_probes;
+                for (int i = 0; i < 4 && i < distances.size(); ++i) 
+                {
+                    int index = distances[i].first;
+                    nearest_probes.push_back(index);
+                    auto L = Utils::loadLightSHFromTxt(filepath + "probe" + std::to_string(index) + "/light.txt");
+                    shader_list[2]->setMat3Array("u_PrecomputeL" + std::to_string(i), L);
+                    shader_list[2]->setVec3("u_PosL" + std::to_string(i), probes[index]->center);
+                }
+
+                // shader_list[2]->setMat3Array("u_PrecomputeL0", L0);
+                // shader_list[2]->setMat3Array("u_PrecomputeL1", L1);
+                // shader_list[2]->setMat3Array("u_PrecomputeL2", L2);
+                // shader_list[2]->setMat3Array("u_PrecomputeL3", L3);
+                // shader_list[2]->setVec3("u_PosL0", probes[0]->center);
+                // shader_list[2]->setVec3("u_PosL1", probes[1]->center);
+                // shader_list[2]->setVec3("u_PosL2", probes[2]->center);
+                // shader_list[2]->setVec3("u_PosL3", probes[3]->center);
                 curr_model_manager->draw();
             } else {
                 curr_model_manager->draw();
@@ -625,10 +666,13 @@ int main()
         }
 
         // 可视化Light Probe
-        for(auto& probe_ptr : probes) {
-            // probe_ptr->drawLightProbeFromCubeMap(view_matrix, projection_matrix);
-            probe_ptr->drawLightProbeFromSH(view_matrix, projection_matrix);
+        if(probe_button) {
+            for(auto& probe_ptr : probes) {
+                // probe_ptr->drawLightProbeFromCubeMap(view_matrix, projection_matrix);
+                probe_ptr->drawLightProbeFromSH(view_matrix, projection_matrix);
+            }
         }
+        
         
         
         //
@@ -656,7 +700,7 @@ int main()
             // Utils::readFrameBufferDepthAttachmentToPng(curr_fbo.id, "../resources/output/depth_1.png", screen_width * 2.0, screen_height * 2.0);
             
             std::string file_name = "../resources/output/" + curr_shader->shader_name + ".png";
-            Utils::readFrameBufferColorAttachmentToPng(0, file_name, screen_width * 2.0, screen_height * 2.0, 4, true, 0);
+            Utils::readFrameBufferColorAttachmentToPng(0, file_name, screen_width * 2.0, screen_height * 2.0, 4, true);
             Utils::readFrameBufferDepthAttachmentToPng(0, "../resources/output/depth.png", screen_width * 2.0, screen_height * 2.0);
         }
 
